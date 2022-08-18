@@ -94,12 +94,24 @@ class CompraController {
         LimiteAtual: InfoCompras[0].LimiteAtual - PedidosNaoFaturados[0].Total,
       };
 
+      let nCompensa = []
+
+      if (!Reputacao[0].Confiavel) {
+        nCompensa = await Database
+          .select('E1Prefixo as E1_PREFIXO', 'E1Num as E1_NUM', 'E1Parcela as E1_PARCELA')
+          .from('dbo.SE1_exc')
+          .where({
+            GrpVen: verified.grpven
+          })
+      }
+
       response.status(200).send({
         Geral: Geral,
         Duplicatas: DuplicatasAberto,
         ComprasAno: ComprasAoAno,
         AFaturar: PedidosNaoFaturados,
-        Confiavel: Reputacao[0].Confiavel
+        Confiavel: Reputacao[0].Confiavel,
+        NaoCompensavel: nCompensa
       });
     } catch (err) {
       response.status(400).send();
@@ -506,8 +518,6 @@ class CompraController {
     let file = null
 
     try {
-      
-      
       if (multiples === 'N') {
 
         newFileName = `comprovante-1-${new Date().getTime()}.${formData.subtype}`;
@@ -711,7 +721,7 @@ class CompraController {
         return
       }
 
-      const rotas =  await Database.select('*').from('dbo.SLWEB_Rotas')
+      const rotas = await Database.select('*').from('dbo.SLWEB_Rotas')
 
       const matchIndexes = matchCEPWithRanges(CEPTarget, rotas.map(rota => rota.range_CEP))
 

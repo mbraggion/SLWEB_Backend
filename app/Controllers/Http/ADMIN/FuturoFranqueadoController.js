@@ -418,10 +418,6 @@ class FuturoFranqueadoController {
         `\\\\192.168.1.250\\dados\\Franquia\\SLWEB\\QUESTIONARIO_PERFIL_ATUALIZADO.doc`
       );
       response.status(200).send(formulario);
-
-      // PUXO O FORMULARIO NA PASTA PUBLIC
-      // const formularioPath = Helpers.publicPath(`QUESTIONARIO_PERFIL_ATUALIZADO.doc`)
-      // response.attachment(formularioPath)
     } catch (err) {
       response.status(400).send();
       logger.error({
