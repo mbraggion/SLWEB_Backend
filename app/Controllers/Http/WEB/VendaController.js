@@ -1,5 +1,6 @@
 "use strict";
 const Database = use("Database");
+const Env = use("Env");
 const Drive = use("Drive");
 const Helpers = use("Helpers");
 const logger = require("../../../../dump/index")
@@ -30,8 +31,12 @@ class VendaController {
 
       const Produtos = await Database.raw(queryListaDeProdutos, []);
 
-      const Clientes = await Database.select("*").from("dbo.Cliente").where({
+      const Clientes = await Database
+      .select("*")
+      .from("dbo.Cliente")
+      .where({
         GrpVen: verified.grpven,
+        ClienteStatus: 'A'
       }).orderBy('Nome_Fantasia', 'ASC');
 
       const CodPag = await Database.select("CpgDesc", "CpgId")
@@ -134,7 +139,7 @@ class VendaController {
         DataCriacao: actualDate,
         DataIntegracao: null,
         DepId: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 1 : Pedido.RemOrigem : 0,
-        DepIdDest: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : Pedido.RemOrigem : 0,
+        DepIdDest: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : Pedido.RemDestino : 0,
         PvTipo: Pedido.TipoVenda,
         STATUS: 'P',
         MsgNF: Pedido.OBS
@@ -190,7 +195,7 @@ class VendaController {
         }).into("dbo.SDBase")
       });
 
-      response.status(200).send({ message: "ok" });
+      response.status(200).send();
     } catch (err) {
       response.status(200).send()
       logger.error({
@@ -568,10 +573,10 @@ class VendaController {
       //pegar nota de devolucao tambem?
 
       const paths = {
-        toDANFE: `\\\\192.168.1.104\\Integratto2\\Xml\\Emissao\\Resposta\\${names.nomeDanfe}`,
-        toXML: `\\\\192.168.1.104\\Integratto2\\Xml\\Emissao\\Resposta\\${names.nomeXml}`,
-        toCancelamento: `\\\\192.168.1.104\\Integratto2\\Docs\\${names.nomeCancelamento}`,
-        toCCorrecao: `\\\\192.168.1.104\\Integratto2\\Docs\\${names.nomeCartaDeCorrecao}`,
+        toDANFE: `${Env.get("NSJ_DOCDIR")}\\Xml\\Emissao\\Resposta\\${names.nomeDanfe}`,
+        toXML: `${Env.get("NSJ_DOCDIR")}\\Xml\\Emissao\\Resposta\\${names.nomeXml}`,
+        toCancelamento: `${Env.get("NSJ_DOCDIR")}\\Docs\\${names.nomeCancelamento}`,
+        toCCorrecao: `${Env.get("NSJ_DOCDIR")}\\Docs\\${names.nomeCartaDeCorrecao}`,
       };
 
       switch (doctype) {
@@ -619,7 +624,7 @@ class VendaController {
     try {
       const verified = seeToken(token);
 
-      const vendaCab = await Database.raw('select C.Nome_Fantasia, PC.PvcID, C.CNPJss, PC.DataCriacao, C.TPessoa from dbo.PedidosVendaCab as PC inner join dbo.Cliente as C on PC.CNPJ = C.CNPJ where PC.GrpVen = ? and PC.PvcID = ? and PC.PvcSerie = ?',
+      const vendaCab = await Database.raw('select C.Nome_Fantasia, PC.PvcID, PC.PvTipo, C.CNPJss, PC.DataCriacao, C.TPessoa from dbo.PedidosVendaCab as PC inner join dbo.Cliente as C on PC.CNPJ = C.CNPJ where PC.GrpVen = ? and PC.PvcID = ? and PC.PvcSerie = ?',
         [verified.grpven, pvc, serie])
 
       const vendaDet = await Database.raw('select PD.ProdId, P.Produto, PD.PvdQtd, PD.PvdVlrUnit, PD.PvdVlrTotal from dbo.PedidosVendaDet as PD inner join dbo.Produtos as P on PD.ProdId = P.ProdId where GrpVen = ? and PD.PvcID = ? and PD.PvcSerie = ?',
@@ -651,7 +656,6 @@ class VendaController {
 
 module.exports = VendaController;
 
-const queryListaDeProdutos =
-  "select Pr.* from dbo.PrecoVenda as PV inner join dbo.Produtos as Pr on PV.ProdId = Pr.ProdId where Pr.Venda = 'S' and PV.GrpVen = '000000' and PV.AnxId = 0 and PV.PdvId = 0 and Pr.Atv2Inat1 = 2 order by Pr.Produto";
+const queryListaDeProdutos = "select Pr.* from dbo.PrecoVenda as PV inner join dbo.Produtos as Pr on PV.ProdId = Pr.ProdId where Pr.Venda = 'S' and PV.GrpVen = '000000' and PV.AnxId = 0 and PV.PdvId = 0 and Pr.Atv2Inat1 = 2 order by Pr.Produto";
 
 const queryPedidosParaFaturar = "SELECT dbo.PedidosVendaCab.GrpVen, dbo.FilialEntidadeGrVenda.M0_CODFIL, ? AS PedidoId, dbo.PedidosVendaDet.PvdID, dbo.Cliente.A1_COD, dbo.Cliente.A1_LOJA, dbo.TipoNF.TNF_TblPreco, dbo.TipoNF.TNF_CodVnd, dbo.CondicaoPagamento.E4_CODIGO AS CPag, dbo.TipoNF.TNF_Frete, dbo.Produtos.CodFab, dbo.PedidosVendaDet.PvdQtd, dbo.PedidosVendaDet.PvdVlrUnit, dbo.PedidosVendaDet.PvdVlrTotal, dbo.PedidosVendaCab.DataCriacao, dbo.TipoNF.TNF_TipOp, dbo.PedidosVendaDet.PvdTES, dbo.TipoNF.TNF_NATUREZA, dbo.PedidosVendaCab.MsgNF, dbo.PedidosVendaDet.PdvVlrDesc FROM ( ( ( ( dbo.Cliente INNER JOIN ( dbo.PedidosVendaCab INNER JOIN dbo.PedidosVendaDet ON ( dbo.PedidosVendaCab.PvcID = dbo.PedidosVendaDet.PvcID ) AND ( dbo.PedidosVendaCab.PvcSerie = dbo.PedidosVendaDet.PvcSerie ) AND ( dbo.PedidosVendaCab.GrpVen = dbo.PedidosVendaDet.GrpVen ) ) ON ( dbo.Cliente.GrpVen = dbo.PedidosVendaCab.GrpVen ) AND ( dbo.Cliente.CNPJ = dbo.PedidosVendaCab.CNPJ ) ) INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.PedidosVendaCab.GrpVen = dbo.FilialEntidadeGrVenda.A1_GRPVEN ) INNER JOIN dbo.CondicaoPagamento ON dbo.PedidosVendaCab.CpgId = dbo.CondicaoPagamento.CpgId ) INNER JOIN dbo.Produtos ON dbo.PedidosVendaDet.ProdId = dbo.Produtos.ProdId ) INNER JOIN dbo.TipoNF ON dbo.PedidosVendaCab.PvTipo = dbo.TipoNF.TNFCod WHERE ( ((dbo.PedidosVendaCab.GrpVen) = ?) AND ((dbo.CondicaoPagamento.GrpVen) = '000000') AND ((dbo.PedidosVendaCab.PvcID) = ?) AND ((dbo.PedidosVendaCab.PvcSerie) = 'F'))"

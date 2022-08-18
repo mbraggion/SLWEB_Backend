@@ -12,8 +12,8 @@ exports.PDFGen = (Cab, Det) => {
         { text: detalhe.ProdId, alignment: 'left' },
         { text: detalhe.Produto, alignment: 'left' },
         { text: detalhe.PvdQtd, alignment: 'right' },
-        { text: `R$ ${Number(detalhe.PvdVlrUnit).toFixed(2)}`, alignment: 'left' },
-        { text: `R$ ${Number(detalhe.PvdVlrTotal).toFixed(2)}`, alignment: 'left' }
+        { text: `R$ ${String(Cab.PvTipo).trim() === 'R' ? '0.00' : Number(detalhe.PvdVlrUnit).toFixed(2)}`, alignment: 'left' },
+        { text: `R$ ${String(Cab.PvTipo).trim() === 'R' ? '0.00' : Number(detalhe.PvdVlrTotal).toFixed(2)}`, alignment: 'left' }
       ]
     )
   })
@@ -30,7 +30,7 @@ exports.PDFGen = (Cab, Det) => {
       }
     },
     content: [
-      { text: `Pedido de Venda - ${Cab.PvcID}`, style: "header" },
+      { text: `Pedido de ${String(Cab.PvTipo).trim() === 'R' ? 'Remessa' : 'Venda'}`, style: "header" },
       {
         image: Helpers.resourcesPath("logo/Exemplo logo pilao - Danfe.bmp"),
         width: 100,
@@ -84,7 +84,7 @@ exports.PDFGen = (Cab, Det) => {
               { text: '', alignment: 'center' },
               { text: '', alignment: 'center' },
               { text: 'TOTAL', style: 'TextT', alignment: 'left' },
-              { text: `R$ ${Number(total).toFixed(2)}`, style: 'TextT', alignment: 'left' }
+              { text: `R$ ${String(Cab.PvTipo).trim() === 'R' ? '0.00' : Number(total).toFixed(2)}`, style: 'TextT', alignment: 'left' }
             ]
           ]
         },
@@ -92,8 +92,8 @@ exports.PDFGen = (Cab, Det) => {
           fillColor: function (rowIndex, node, columnIndex) {
             if (rowIndex === 0) {
               return '#FFFFFF'
-            } else if (rowIndex === node.table.body.length-1) {
-              return '#FAC090'
+            } else if (rowIndex === node.table.body.length - 1) {
+              return '#1b1b1b'
             } else if (rowIndex % 2 === 0 && rowIndex !== 0) {
               return '#CCCCCC'
             } else {
@@ -110,13 +110,13 @@ exports.PDFGen = (Cab, Det) => {
             return '#FFFFFF';
           },
           vLineColor: function (i, node, rowIndex) {
-            if(rowIndex === node.table.body.length-1){
-              return '#FAC090'
-            }else if(i === 2){
+            if (rowIndex === node.table.body.length - 1) {
+              return '#1b1b1b'
+            } else if (i === 2) {
               return '#000000'
-            }else if(rowIndex % 2 === 0 && rowIndex !== 0 && i !== 2){
+            } else if (rowIndex % 2 === 0 && rowIndex !== 0 && i !== 2) {
               return '#CCCCCC'
-            }else{
+            } else {
               return '#FFFFFF'
             }
           },
@@ -142,8 +142,8 @@ exports.PDFGen = (Cab, Det) => {
         bold: true,
         margin: [0, 20, 0, 8]
       },
-      TextT:{
-        color:"#FFF",
+      TextT: {
+        color: "#FFF",
         alignment: 'center',
         bold: true,
         fontSize: 10,

@@ -65,7 +65,7 @@ class ConsultaColetasController {
   async CalcMin({ request, response, params }) {
     const token = request.header("authorization");
     const Equicod = params.Equicod
-    
+
     try {
       const verified = seeToken(token);
 

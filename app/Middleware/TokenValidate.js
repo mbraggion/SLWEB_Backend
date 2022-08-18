@@ -1,6 +1,5 @@
 'use strict'
 const { seeToken } = require("../Services/jwtServices");
-const logger = require("../../dump/index")
 
 /** @typedef {import('@adonisjs/framework/src/Request')} Request */
 /** @typedef {import('@adonisjs/framework/src/Response')} Response */

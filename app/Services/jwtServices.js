@@ -124,6 +124,29 @@ exports.genTokenAdm = async (admin_code, admin_password) => {
   }
 };
 
+exports.genTokenAdmLogout = async (admin_code, admin_role) => {
+    const token = jwt.sign(
+      {
+        user_code: '0000',
+        grpven: '000000',
+        role: admin_role,
+        timestamp: new Date().toLocaleString(),
+        user_name: '',
+        admin_code: admin_code,
+      },
+      Env.get("APP_KEY"),
+      {
+        expiresIn: "2h",
+      }
+    );
+
+    return {
+      nome: '',
+      token,
+      role: admin_role
+    };
+};
+
 exports.genTokenExternal = async (code) => {
   try {
 

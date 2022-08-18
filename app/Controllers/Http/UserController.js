@@ -3,21 +3,51 @@
 const Database = use("Database");
 const Mail = use("Mail");
 const Env = use("Env");
-const { genToken, genTokenAdm, genTokenAdmWithFilial, genTokenExternal, seeToken } = require("../../Services/jwtServices");
+const { genToken, genTokenAdm, genTokenAdmWithFilial, genTokenExternal, seeToken, genTokenAdmLogout } = require("../../Services/jwtServices");
 const logger = require("../../../dump/index")
 
 class UserController {
-  /** @param {object} ctx
-   * @param {import('@adonisjs/framework/src/Request')} ctx.request
-   */
+
   async Login({ request, response }) {
     const { user_code, password } = request.only(["user_code", "password"]);
 
     try {
       //testa usuario + senha informados
       const token = await genToken(user_code, password);
-      
-      response.status(202).send(token); //Retorno do token
+
+      const DeveConfirmacao = await Database
+        .select('Equip')
+        .from('dbo.FilialEntidadeGrVenda')
+        .where({
+          M0_CODFIL: user_code
+        })
+
+      const links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [user_code, process.env.NODE_ENV, user_code] : [user_code, user_code])
+
+      let linksEmSessões = []
+
+      links.filter(LS => {
+        if (DeveConfirmacao[0].Equip === 'S') {
+          if (LS.Bloqueavel === true) {
+            return false
+          } else {
+            return true
+          }
+        } else {
+          return true
+        }
+      }).forEach(ln => {
+        if (linksEmSessões[ln.Sessao]) {
+          linksEmSessões[ln.Sessao] = [...linksEmSessões[ln.Sessao], ln]
+        } else {
+          linksEmSessões[ln.Sessao] = [ln]
+        }
+      })
+
+      response.status(202).send({
+        ...token,
+        Links: linksEmSessões.filter(LS => LS !== null)
+      });
     } catch (err) {
       response.status(401).send();
       logger.error({
@@ -80,15 +110,24 @@ class UserController {
   }
 
   async AdmPartialLogin({ request, response }) {
-    const { admin_code, admin_password } = request.only([
-      "admin_code",
-      "admin_password",
-    ]);
+    const { admin_code, admin_password } = request.only(["admin_code", "admin_password",]);
 
     try {
       const token = await genTokenAdm(admin_code, admin_password)
 
-      response.status(202).send(token);
+      const links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [admin_code, process.env.NODE_ENV, admin_code] : [admin_code, admin_code])
+      
+      let linksEmSessões = []
+
+      links.forEach(ln => {
+        if (linksEmSessões[ln.Sessao]) {
+          linksEmSessões[ln.Sessao] = [...linksEmSessões[ln.Sessao], ln]
+        } else {
+          linksEmSessões[ln.Sessao] = [ln]
+        }
+      })
+
+      response.status(202).send({ ...token, Links: linksEmSessões.filter(LS => LS !== null) });
     } catch (err) {
       response.status(401).send();
       logger.error({
@@ -108,14 +147,22 @@ class UserController {
     try {
       const verified = seeToken(token);
 
-      if (verified.role === 'Franquia') {
-        throw new Error('Acesso negado')
-      }
-
       //crio token com codido do adm, codigo do cliente, senha e nivel do adm
       const admTokenWithFilial = await genTokenAdmWithFilial(user_code, verified);
 
-      response.status(200).send(admTokenWithFilial);
+      const links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [verified.admin_code, process.env.NODE_ENV, verified.admin_code] : [verified.admin_code, verified.admin_code])
+
+      let linksEmSessões = []
+
+      links.forEach(ln => {
+        if (linksEmSessões[ln.Sessao]) {
+          linksEmSessões[ln.Sessao] = [...linksEmSessões[ln.Sessao], ln]
+        } else {
+          linksEmSessões[ln.Sessao] = [ln]
+        }
+      })
+
+      response.status(202).send({ ...admTokenWithFilial, Links: linksEmSessões.filter(LS => LS !== null) });
     } catch (err) {
       response.status(400).send();
       logger.error({
@@ -124,6 +171,39 @@ class UserController {
         payload: request.body,
         err: err,
         handler: 'UserController.AdmFullLogin',
+      })
+    }
+  }
+
+  async AdmLogoutFilial({ request, response }) {
+    const token = request.header("authorization");
+
+    try {
+      const verified = seeToken(token);
+
+      const admTokenLogout = await genTokenAdmLogout(verified.admin_code, verified.role);
+
+      const links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [verified.admin_code, process.env.NODE_ENV, verified.admin_code] : [verified.admin_code, verified.admin_code])
+
+      let linksEmSessões = []
+
+      links.forEach(ln => {
+        if (linksEmSessões[ln.Sessao]) {
+          linksEmSessões[ln.Sessao] = [...linksEmSessões[ln.Sessao], ln]
+        } else {
+          linksEmSessões[ln.Sessao] = [ln]
+        }
+      })
+
+      response.status(202).send({ ...admTokenLogout, Links: linksEmSessões.filter(LS => LS !== null) });
+    } catch (err) {
+      response.status(400).send();
+      logger.error({
+        token: token,
+        params: null,
+        payload: request.body,
+        err: err,
+        handler: 'UserController.AdmLogoutFilial',
       })
     }
   }
@@ -173,7 +253,19 @@ class UserController {
 
         const token = await genTokenExternal(code);
 
-        response.status(201).send(token);
+        const links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [code, process.env.NODE_ENV, code] : [code, code])
+
+        let linksEmSessões = []
+
+        links.forEach(ln => {
+          if (linksEmSessões[ln.Sessao]) {
+            linksEmSessões[ln.Sessao] = [...linksEmSessões[ln.Sessao], ln]
+          } else {
+            linksEmSessões[ln.Sessao] = [ln]
+          }
+        })
+
+        response.status(202).send({ ...token, Links: linksEmSessões.filter(LS => LS !== null) });
       } else {
         throw new Error('Mais de 1 minuto de redirecionamento');
       }
@@ -192,3 +284,5 @@ class UserController {
 }
 
 module.exports = UserController;
+
+const QUERY_LINKS_DISPONIVEIS = `select L.Descricao, L.Link, L.Sessao, L.Icon, L.AccessLevel, L.Bloqueavel from dbo.SLWEB_Links as L inner join ( select T.* from dbo.Operador as O inner join dbo.TipoOper as T on T.TopeCod = O.TopeCod where M0_CODFIL = ? ) as O on ( L.AccessScale = 0 and L.AccessLevel = O.AccessLevel ) or ( L.AccessScale = 1 and O.AccessLevel >= L.AccessLevel ) or ( L.AccessLevel is null ) where ${process.env.NODE_ENV === 'development' ? '' : 'Ambiente = ? and'} Habilitado = 1 and (ExcludeTopeCod  <> (select TopeCod from dbo.Operador where M0_CODFIL = ?) or ExcludeTopeCod is null) order by Sessao ASC`

@@ -19,13 +19,13 @@ class LeadController {
 
       //busca leads disponiveis
       const LeadsGeral = await Database.raw(
-        "select L.Id, L.Nome_Fantasia, L.Razao_Social, L.Estado, L.Municipio, L.AtividadeDesc, L.Mensagem, L.Insercao from (select * from dbo.Leads as L left join (select LeadId, COUNT(GrpVen) as Atribuicoes from dbo.LeadsAttr where Ativo = 1 group by LeadId) as C on L.Id = C.LeadId left join (select ParamVlr as MaxAtribuicoes from dbo.Parametros where ParamId = 'LeadMax') as P on P.MaxAtribuicoes <> 0 where Atribuicoes IS NULL OR Atribuicoes < MaxAtribuicoes and L.Disponivel = 1) as L inner join dbo.FilialEntidadeGrVenda as F on F.A1_GRPVEN = ? where L.Id not in (select LeadId from dbo.LeadsAttr where GrpVen = ? group by LeadId) and L.Insercao <= (SELECT DATETIMEFROMPARTS(DATEPART(YY, GETDATE()),DATEPART(MM, GETDATE()), DATEPART(DD, GETDATE()), (select top(1) ParamVlr from dbo.Parametros where ParamId = 'LeadLiberacaoHora'), 00, 00, 000)) and DATEDIFF(D, L.Insercao, GETDATE()) <= 45 and (F.UF = L.Estado OR F.M0_CODFIL = '0201' OR F.M0_CODFIL = '0203') order by L.Insercao DESC",
+        "select L.Id, L.Nome_Fantasia, L.Razao_Social, L.Estado, L.Municipio, L.AtividadeDesc, L.Mensagem, L.Insercao from ( select * from dbo.Leads as L left join( select LeadId, COUNT(GrpVen) as Atribuicoes from dbo.LeadsAttr where Ativo = 1 or (Ativo = 0 and Negociacao = 1) group by LeadId ) as C on L.Id = C.LeadId left join( select ParamVlr as MaxAtribuicoes from dbo.Parametros where ParamId = 'LeadMax' ) as P on P.MaxAtribuicoes <> 0 where Atribuicoes IS NULL OR Atribuicoes < MaxAtribuicoes and L.Disponivel = 1 ) as L inner join dbo.FilialEntidadeGrVenda as F on F.A1_GRPVEN = ? where L.Id not in ( select LeadId from dbo.LeadsAttr where GrpVen = ? group by LeadId ) and L.Insercao <= ( SELECT DATETIMEFROMPARTS( DATEPART(YY, GETDATE()), DATEPART(MM, GETDATE()), DATEPART(DD, GETDATE()), ( select top(1) ParamVlr from dbo.Parametros where ParamId = 'LeadLiberacaoHora' ), 00, 00, 000 ) ) and DATEDIFF(D, L.Insercao, GETDATE()) <= 45 and( F.UF = L.Estado OR F.M0_CODFIL = '0201' OR F.M0_CODFIL = '0203' ) and L.Disponivel = 1 order by L.Insercao DESC",
         [verified.grpven, verified.grpven]
       );
 
       //busca leads assumidos pelo franqueado
       const LeadsFranqueado = await Database.raw(
-        "select L.Id, L.Nome_Fantasia, L.Razao_Social, L.Estado, L.Municipio, L.AtividadeDesc, L.Mensagem, L.Contato, L.Fone_1, L.Fone_2, L.Email, A.DataHora, A.Ativo, A.DataFechamento, L.Insercao from dbo.Leads as L inner join dbo.LeadsAttr as A on L.Id = A.LeadId where A.GrpVen = ? and (A.Ativo = 1 or (A.Ativo = 0 and A.DataFechamento >= (SELECT DATETIMEFROMPARTS(DATEPART(YY, GETDATE()),DATEPART(MM, GETDATE()), DATEPART(DD, GETDATE()), (select top(1) ParamVlr from dbo.Parametros where ParamId = 'LeadLiberacaoHora'), 00, 00, 000))))",
+        "select L.Id, L.Nome_Fantasia, L.Razao_Social, L.Estado, L.Municipio, L.AtividadeDesc, L.Mensagem, L.Contato, L.Fone_1, L.Fone_2, L.Email, A.DataHora, A.Ativo, A.Desistiu, A.Expirou, A.Negociacao, A.DataFechamento, L.Insercao from dbo.Leads as L inner join dbo.LeadsAttr as A on L.Id = A.LeadId where A.GrpVen = ? and (A.Ativo = 1 or (A.Ativo = 0 and A.DataFechamento >= (SELECT DATETIMEFROMPARTS(DATEPART(YY, GETDATE()),DATEPART(MM, GETDATE()), DATEPART(DD, GETDATE()), (select top(1) ParamVlr from dbo.Parametros where ParamId = 'LeadLiberacaoHora'), 00, 00, 000))))",
         [verified.grpven]
       );
 
@@ -34,7 +34,21 @@ class LeadController {
         [verified.grpven, verified.grpven]
       );
 
-      response.status(200).send({ LeadsGeral, LeadsFranqueado, Limites });
+      response.status(200).send({
+        LeadsGeral: LeadsGeral.map(lead => ({ ...lead, status: 'Disponivel' })),
+        LeadsFranqueado: LeadsFranqueado.map(lead => {
+          if (lead.Ativo === true) {
+            return ({ ...lead, status: 'Resgatado' })
+          } else if (lead.Desistiu === true) {
+            return ({ ...lead, status: 'Desistido' })
+          } else if (lead.Expirou === true) {
+            return ({ ...lead, status: 'Expirado' })
+          } else if (lead.Negociacao === true) {
+            return ({ ...lead, status: 'Negociando' })
+          }
+        }),
+        Limites
+      });
     } catch (err) {
       response.status(400).send()
       logger.error({
@@ -51,14 +65,9 @@ class LeadController {
     const token = request.header("authorization");
 
     try {
-      const verified = seeToken(token);
       let Leads = []
 
-      if (verified.role === "Sistema" || verified.role === "BackOffice" || verified.role === "Técnica Pilão" || verified.role === "Técnica Bianchi" || verified.role === "Expedição") {
-        Leads = await Database.raw("select L.Id, Nome_Fantasia, Razao_Social, Estado, Municipio, AtividadeDesc, Mensagem, Insercao, Disponivel, LA.Filial from dbo.Leads as L left join dbo.LeadsAttr as LA on LA.LeadId = L.Id and LA.Ativo = 1 order by Insercao DESC", [])
-      } else {
-        throw new Errow('Usuário não permitido')
-      }
+      Leads = await Database.raw("select L.Id, Nome_Fantasia, Razao_Social, Estado, Municipio, AtividadeDesc, Mensagem, Insercao, Disponivel, LA.Filial from dbo.Leads as L left join (select * from dbo.LeadsAttr where Ativo = 1 or Negociacao = 1) as LA on LA.LeadId = L.Id order by Insercao DESC", [])
 
       response.status(200).send({
         Leads: Leads
@@ -102,29 +111,23 @@ class LeadController {
     const LeadId = params.lead
 
     try {
-      const verified = seeToken(token);
       let info = null
       let hist = null
 
-      if (verified.role === "Sistema" || verified.role === "BackOffice" || verified.role === "Técnica Pilão" || verified.role === "Técnica Bianchi" || verified.role === "Expedição") {
-        info = await Database
-          .select('*')
-          .from('dbo.Leads')
-          .where({
-            Id: LeadId
-          })
+      info = await Database
+        .select('*')
+        .from('dbo.Leads')
+        .where({
+          Id: LeadId
+        })
 
-        hist = await Database
-          .select('LeadId', 'Filial', 'DataHora', 'Ativo', 'Desistiu', 'Motivo', 'Expirou', 'Negociacao', 'DataFechamento')
-          .from('dbo.LeadsAttr')
-          .where({
-            LeadId: LeadId
-          })
-          .orderBy('DataHora', 'DESC')
-
-      } else {
-        throw new Errow('Usuário não permitido')
-      }
+      hist = await Database
+        .select('LeadId', 'Filial', 'DataHora', 'Ativo', 'Desistiu', 'Motivo', 'Expirou', 'Negociacao', 'DataFechamento')
+        .from('dbo.LeadsAttr')
+        .where({
+          LeadId: LeadId
+        })
+        .orderBy('DataHora', 'DESC')
 
       response.status(200).send({
         Info: info[0],
@@ -199,12 +202,13 @@ class LeadController {
             Ativo: false,
             Desistiu: false,
             Negociacao: true,
-            Motivo: motivo,
+            Motivo: null,
             DataFechamento: moment().subtract(3, "hours").toDate(),
           });
 
         response.status(200).send();
       }
+
     } catch (err) {
       response.status(400).send()
       logger.error({
@@ -223,17 +227,12 @@ class LeadController {
     const Status = params.status
 
     try {
-      const verified = seeToken(token);
+      await Database.table("dbo.Leads")
+        .where({ Id: LeadId })
+        .update({
+          Disponivel: Status === 'A' ? true : false
+        })
 
-      if (verified.role === "Sistema" || verified.role === "BackOffice" || verified.role === "Técnica Pilão" || verified.role === "Técnica Bianchi" || verified.role === "Expedição") {
-        await Database.table("dbo.Leads")
-          .where({ Id: LeadId })
-          .update({
-            Disponivel: Status === 'A' ? true : false
-          })
-      } else {
-        throw new Error('Usuário não permitido')
-      }
       response.status(200).send()
     } catch (err) {
       response.status(400).send()
@@ -252,11 +251,6 @@ class LeadController {
     const { lead } = request.only(["lead"]);
 
     try {
-      const verified = seeToken(token);
-      if (verified.role === "Franquia") {
-        throw Error;
-      }
-
       await Database.insert({
         Nome_Fantasia: lead.NomeFantasia,
         Razao_Social: lead.RazaoSocial,
@@ -271,7 +265,7 @@ class LeadController {
         Disponivel: true,
       }).into("dbo.Leads");
 
-      response.status(201).send("Ok");
+      response.status(201).send();
     } catch (err) {
       response.status(400).send()
       logger.error({

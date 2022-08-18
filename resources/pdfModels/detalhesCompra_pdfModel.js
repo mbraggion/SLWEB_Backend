@@ -96,7 +96,7 @@ exports.PDFGen = (Cab, Det) => {
             if (rowIndex === 0) {
               return '#FFFFFF'
             } else if (rowIndex === node.table.body.length - 1) {
-              return '#FAC090'
+              return '#1b1b1b'
             } else if (rowIndex % 2 === 0 && rowIndex !== 0) {
               return '#CCCCCC'
             } else {
@@ -114,7 +114,7 @@ exports.PDFGen = (Cab, Det) => {
           },
           vLineColor: function (i, node, rowIndex) {
             if (rowIndex === node.table.body.length - 1) {
-              return '#FAC090'
+              return '#1b1b1b'
             } else if (i === 2) {
               return '#000000'
             } else if (rowIndex % 2 === 0 && rowIndex !== 0 && i !== 2) {

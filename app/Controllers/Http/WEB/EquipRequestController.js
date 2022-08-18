@@ -45,7 +45,10 @@ class EquipRequestController {
         "UF"
       )
         .from("dbo.Cliente")
-        .where({ GrpVen: verified.grpven })
+        .where({
+          GrpVen: verified.grpven,
+          ClienteStatus: 'A'
+        })
         .orderBy("Nome_Fantasia");
 
       //prazo minimo para recebimento das máquinas
@@ -164,8 +167,10 @@ class EquipRequestController {
 
   async Show({ request, response }) {
     const token = request.header("authorization");
+
     try {
       const verified = seeToken(token);
+
       const requisicao = await Database.select("*")
         .from("dbo.OSCtrl")
         .where({ GrpVen: verified.grpven })
@@ -189,8 +194,6 @@ class EquipRequestController {
     const MaqId = params.id;
 
     try {
-      const verified = seeToken(token); //não uso o token aqui mas é melhor testar pela boa pratica
-
       const configPadrao = await Database.raw(
         "select B.Cod, C.MaqConfigId, M.MaqModelo, C.MaqConfigNome , C.Selecao, B.Un,B.Bebida, B.Qtd as Qtd_Def, B.Medida as Medida_Def, IIF(C.Pront1Mist2 = 1, 'Pronto', 'Mistura') as TProd, IIF(C.Pront1Mist2 = 1, B.ContPronto, B.ContMist) as Contenedor from dbo.OSMaqConfPadrao as C left join dbo.OSBebidas as B on C.CodBebida = B.Cod left join dbo.OSConfigMaq as M on M.MaqModId = C.MaqModId where M.MaqModId = ?",
         [MaqId]
@@ -231,21 +234,9 @@ class EquipRequestController {
     const token = request.header("authorization");
 
     try {
-      const verified = seeToken(token);
+      const requisicoes = await Database.raw("select F.M0_CODFIL , O.* from dbo.OSCtrl as O inner join dbo.FilialEntidadeGrVenda as F on O.GrpVen = F.A1_GRPVEN order by OSCId DESC", [])
 
-      if (
-        verified.role === "Sistema" ||
-        verified.role === "BackOffice" ||
-        verified.role === "Técnica Pilão" ||
-        verified.role === "Técnica Bianchi" ||
-        verified.role === "Expedição"
-      ) {
-        const requisicoes = await Database.raw("select F.M0_CODFIL , O.* from dbo.OSCtrl as O inner join dbo.FilialEntidadeGrVenda as F on O.GrpVen = F.A1_GRPVEN order by OSCId DESC", [])
-
-        response.status(200).send(requisicoes);
-      } else {
-        throw Error;
-      }
+      response.status(200).send(requisicoes);
     } catch (err) {
       response.status(400).send()
       logger.error({
@@ -395,9 +386,9 @@ class EquipRequestController {
 
   }
 
-  async RetriveOS({ request, response }) {
+  async RetriveOS({ request, response, params }) {
     const token = request.header("authorization");
-    const { OSID } = request.only(["OSID"]);
+    const OSID = params.osid
     const path = Helpers.publicPath(`/OS`);
 
     let PathWithName = ''
@@ -485,10 +476,9 @@ class EquipRequestController {
           break;
 
         default:
-          response.status(200).send("ok");
           break;
       }
-      response.status(200).send("ok");
+      response.status(200).send();
     } catch (err) {
       response.status(400).send()
       logger.error({
@@ -545,6 +535,7 @@ class EquipRequestController {
                     Env.get("EMAIL_TECNICA_1"),
                     Env.get("EMAIL_TECNICA_2"),
                     Env.get("EMAIL_TECNICA_3"),
+                    Env.get("EMAIL_2BTECH_ATENDIMENTO"),
                   ])
                   .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
                   .subject("OS Validada pela Pilão")
@@ -792,10 +783,8 @@ class EquipRequestController {
     const token = request.header("authorization");
     const { action, OSID } = request.only(["action", "OSID"]);
     let S;
-    try {
-      const verified = seeToken(token);
 
-      if (verified.role !== "Sistema") throw Error;
+    try {
 
       switch (action) {
         case "Cancelar": //cancelar OS
@@ -879,6 +868,7 @@ class EquipRequestController {
           response.status(200).send();
           break;
       }
+
     } catch (err) {
       response.status(400).send()
       logger.error({
@@ -896,12 +886,12 @@ class EquipRequestController {
 
     try {
       const information = await Database
-      .select('ParamTxt')
-      .from('dbo.Parametros')
-      .where({
-        GrpVen: '000000',
-        ParamId: 'INSTRUCOESCARTAO',
-      })
+        .select('ParamTxt')
+        .from('dbo.Parametros')
+        .where({
+          GrpVen: '000000',
+          ParamId: 'INSTRUCOESCARTAO',
+        })
 
       response.status(200).send({
         Instrucoes: information[0].ParamTxt

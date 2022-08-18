@@ -15,7 +15,8 @@ class EquipController {
       const ativos = await Database.raw(ShowAllAtivosFilial, [verified.grpven, verified.grpven]);
 
       const clientes = await Database.select('*').from('dbo.Cliente').where({
-        GrpVen: verified.grpven
+        GrpVen: verified.grpven,
+        ClienteStatus: 'A'
       }).orderBy('Nome_Fantasia', 'ASC')
 
       const confirmPeriod = await Database.raw(confirmEquipPeriod, []);
