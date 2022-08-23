@@ -1,6 +1,6 @@
 {
   "name": "adonis-api-app",
-  "version": "9.9.5",
+  "version": "10.0.0",
   "adonis-version": "4.1.0",
   "description": "Adonisjs boilerplate for API server with pre-configured JWT",
   "main": "index.js",

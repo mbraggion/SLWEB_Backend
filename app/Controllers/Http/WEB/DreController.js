@@ -73,6 +73,7 @@ class DreController {
             GrpVen: verified.grpven,
             DReRef: formatedTargetRef,
             DreCod: genDRE[i].DreCod,
+            DreIndex: genDRE[i].DreIndex,
             DreDesc: genDRE[i].DreDesc,
             DreTipo: null,
             DreVlr: 0,
@@ -323,7 +324,8 @@ class DreController {
 
       const concatDREeDOV = [
         ...genDRE.map(r => Object.values({
-          ...r,
+          DreCod: r.DreCod,
+          DreDesc: r.DreDesc,
           DreVlr: new Intl.NumberFormat('pt-BR', {
             style: 'currency',
             currency: 'BRL'

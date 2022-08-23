@@ -33,11 +33,6 @@ class Valid {
       ) {
         await next()
       } else {
-        console.log('Usuário: ' + verified.admin_code ? verified.admin_code : verified.user_code)
-        console.log('Nivel de acesso requerido: ' + AccessLevelRequired)
-        console.log('Nivel do usuário: ' + AccessLevel[0].AccessLevel)
-        console.log('Escalável: ' + ScaleLevel ? 'Sim' : 'Não')
-
         response.status(423).send()
       }
 
