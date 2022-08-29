@@ -28,8 +28,8 @@ class Valid {
       )
 
       if (
-        (ScaleLevel && AccessLevelRequired <= AccessLevel[0].AccessLevel) ||
-        (!ScaleLevel && AccessLevelRequired === AccessLevel[0].AccessLevel)
+        (ScaleLevel && Number(AccessLevelRequired) <= Number(AccessLevel[0].AccessLevel)) ||
+        (!ScaleLevel && Number(AccessLevelRequired) === Number(AccessLevel[0].AccessLevel))
       ) {
         await next()
       } else {

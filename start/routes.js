@@ -98,6 +98,7 @@ Route.post("/equip/requests", "WEB/EquipRequestController.Store").middleware(['j
 Route.get("/equip/requests/all", "WEB/EquipRequestController.All").middleware(['jwt', 'vld:1,1']); //retorna todas as requisições
 Route.put("/equip/requests/check", "WEB/EquipRequestController.ViewCheck").middleware(['jwt', 'vld:1,1']); //atualiza a data de visualização
 Route.put("/equip/requests/validate", "WEB/EquipRequestController.ValidateOS").middleware(['jwt', 'vld:0,1']); //atualiza a configuração da maquina
+Route.put("/equip/requests/inform", "WEB/EquipRequestController.TecInfEqData").middleware(['jwt', 'vld:1,0']); //atualiza a configuração da maquina
 Route.put("/equip/requests/admin", "WEB/EquipRequestController.SistemOptions").middleware(['jwt', 'vld:4,0']); //adm gerencia a os
 
 //Franquia

@@ -53,10 +53,7 @@ exports.PDFGen = (Solicitacao, ID, Dados, verified, solicitacao) => {
     `${Solicitacao.Pagamento}`,
   ]);
 
-  if (
-    Solicitacao.Pagamento === "Validador" ||
-    Solicitacao.Pagamento === "Cartão e Validador"
-  ) {
+  if ( Solicitacao.Pagamento === "Validador" || Solicitacao.Pagamento === "Cartão e Validador" ) {
     detalhes.push([
       { text: "Tipo de Validador: ", bold: true },
       `${Solicitacao.TipoValidador}`,
@@ -119,11 +116,11 @@ exports.PDFGen = (Solicitacao, ID, Dados, verified, solicitacao) => {
               body: [
                 [
                   { text: 'Ativo: ' },
-                  { text: '' },
+                  { text: Solicitacao.EquipCod ? Solicitacao.EquipCod : '' },
                   { text: 'Telemetria: ' },
-                  { text: '' },
+                  { text: Solicitacao.TelemetriaNum ? Solicitacao.TelemetriaNum : '' },
                   { text: 'SLRaspy: ' },
-                  { text: '' }
+                  { text: Solicitacao.SLRaspyNum ? Solicitacao.SLRaspyNum : '' }
                 ]
               ],
             },
