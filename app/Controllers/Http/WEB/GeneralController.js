@@ -1,8 +1,6 @@
 'use strict'
 
 const Database = use("Database");
-const Mail = use("Mail");
-const Env = use("Env");
 const { seeToken } = require("../../../Services/jwtServices");
 const moment = require("moment");
 const logger = require("../../../../dump/index")
@@ -157,15 +155,25 @@ class GeneralController {
     try {
       const verified = seeToken(token);
 
-      const DeveConfirmacao = await Database
+      const DeveConfirmacaoDeLocalizacao = await Database
         .select('Equip')
         .from('dbo.FilialEntidadeGrVenda')
         .where({
           M0_CODFIL: verified.user_code
         })
 
+      const DeveConfirmacaoDeRecebimento = await Database
+        .select('OSCId')
+        .from('dbo.OSCtrl')
+        .where(
+          'OSCDtPretendida', '<', new Date(),
+          'OSCStatus', '=', 'Ativo',
+          'GrpVen', '=', verified.grpven
+        )
+
       response.status(200).send({
-        Equip: DeveConfirmacao[0] ? DeveConfirmacao[0].Equip === 'S' : false
+        Equip: DeveConfirmacaoDeLocalizacao[0] ? DeveConfirmacaoDeLocalizacao[0].Equip === 'S' : false,
+        Deliver: DeveConfirmacaoDeRecebimento.length > 0 ? true : false
       })
     } catch (err) {
       response.status(400).send()
