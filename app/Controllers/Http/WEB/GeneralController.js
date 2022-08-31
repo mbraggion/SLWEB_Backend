@@ -165,11 +165,9 @@ class GeneralController {
       const DeveConfirmacaoDeRecebimento = await Database
         .select('OSCId')
         .from('dbo.OSCtrl')
-        .where(
-          'OSCDtPretendida', '<', new Date(),
-          'OSCStatus', '=', 'Ativo',
-          'GrpVen', '=', verified.grpven
-        )
+        .where('OSCDtPretendida', '<', new Date())
+        .andWhere('OSCStatus', '=', 'Ativo')
+        .andWhere('GrpVen', '=', verified.grpven)
 
       response.status(200).send({
         Equip: DeveConfirmacaoDeLocalizacao[0] ? DeveConfirmacaoDeLocalizacao[0].Equip === 'S' : false,

@@ -1,8 +1,10 @@
 "use strict";
 
 const Database = use("Database");
+const Env = use("Env");
 const { seeToken } = require("../../../Services/jwtServices");
 const logger = require("../../../../dump/index")
+const { spawn } = require('child_process');
 
 class PedidosDeCompra {
   /** @param {object} ctx
@@ -27,16 +29,16 @@ class PedidosDeCompra {
       }
 
       let pedidosDeCompraEmAberto = await Database.raw(QUERY_PEDIDOS_DE_COMPRA_EM_ABERTO, [diffConverted])
-      
+
       for (let i = 0; i < pedidosDeCompraEmAberto.length; i++) {
         let d = await Database.raw("select PedidoItemID, CodigoProduto, Produto, QtdeVendida, PrecoUnitarioLiquido, PrecoTotal from dbo.PedidosVenda left join dbo.Produtos on dbo.PedidosVenda.CodigoProduto = dbo.Produtos.ProdId where Filial = '0201' and PedidoID = ? order by PedidoItemID ASC", [pedidosDeCompraEmAberto[i].PedidoID])
-        
+
         pedidosDeCompraEmAberto[i] = {
           ...pedidosDeCompraEmAberto[i],
           Detalhes: d
         }
       }
-      
+
       let transportadoras = await Database.raw('use SDBP12 select A4_COD, A4_NREDUZ from dbo.SA4010 use SLAPLIC')
 
       response.status(200).send({
@@ -80,12 +82,12 @@ class PedidosDeCompra {
           CodigoTotvs: null,
         })
         .update({
-          TipoVolume: payload.Tipo, 
-          QtdVolumes: payload.Qtd, 
-          EMISS: payload.Emissao, 
-          Transportadora: payload.Transportadora, 
-          DataEntrega: payload.Faturamento, 
-          Peso: payload.Peso, 
+          TipoVolume: payload.Tipo,
+          QtdVolumes: payload.Qtd,
+          EMISS: payload.Emissao,
+          Transportadora: payload.Transportadora,
+          DataEntrega: payload.Faturamento,
+          Peso: payload.Peso,
           MsgNotaFiscal: payload.MsgNFe
         });
 
@@ -98,6 +100,37 @@ class PedidosDeCompra {
         payload: request.body,
         err: err,
         handler: 'PedidosDeCompra.Update',
+      })
+    }
+  }
+
+  async Integrar({ request, response }) {
+    const token = request.header("authorization");
+
+    try {
+      var ls = spawn(Env.get('BAT_INTEGRACAO_DOCDIR'))
+
+      ls.stdout.on('data', function (data) {
+        console.log('execução: ' + data);
+      })
+
+      ls.stderr.on('data', function (data) {
+        console.log('erro: ' + data);
+      })
+
+      ls.on('exit', function (code) {
+        console.log('child process exited with code: ' + code);
+      })
+
+      response.status(200).send()
+    } catch (err) {
+      response.status(400).send()
+      logger.error({
+        token: token,
+        params: null,
+        payload: request.body,
+        err: err,
+        handler: 'PedidosDeCompra.Integrar',
       })
     }
   }

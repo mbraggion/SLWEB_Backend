@@ -143,6 +143,7 @@ Route.put("/pontosdevenda/inativar", "WEB/PontosDeVendaController.InativPDV").mi
 Route.put("/pontosdevenda/atualizar/:pdvid/:anxid/:type", "WEB/PontosDeVendaController.Update").middleware(['jwt', 'vld:0,1']); //atualiza dados do pdv
 
 //Pedidos de compra
+Route.get('/pedidos/compra/integracao', 'ADMIN/PedidosDeCompraController.Integrar').middleware(['jwt', 'vld:1,1']);
 Route.get('/pedidos/compra/:diff', 'ADMIN/PedidosDeCompraController.Show').middleware(['jwt', 'vld:1,1']);
 Route.put('/pedidos/compra/', 'ADMIN/PedidosDeCompraController.Update').middleware(['jwt', 'vld:1,1']);
 

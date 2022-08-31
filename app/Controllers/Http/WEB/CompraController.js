@@ -35,6 +35,8 @@ class CompraController {
     try {
       seeToken(token);
 
+      Database.raw('execute dbo.sp_AcertaPedCompra')
+
       const Produtos = await Database.raw(queryProdutos);
       const Desconto = await Database
         .select('ParamVlr')
@@ -80,7 +82,7 @@ class CompraController {
         verified.grpven
       );
 
-      const PedidosNaoFaturados = await Database.raw("SELECT IIF(Sum(dbo.PedidosVenda.PrecoTotal) is null, 0, Sum(dbo.PedidosVenda.PrecoTotal)) AS Total FROM dbo.PedidosVenda INNER JOIN dbo.PedidosCompraCab ON (     dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial ) AND (     dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId ) WHERE (     ((dbo.PedidosCompraCab.NroNF) Is Null)     AND ((dbo.PedidosCompraCab.GrpVen) = ?)     AND (    (dbo.PedidosVenda.STATUS) <> 'C'    Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null     ) )", [verified.grpven]);
+      const PedidosNaoFaturados = await Database.raw(queryPedidosAFaturar, [verified.grpven]);
 
       const ComprasAoAno = await Database.raw(queryComprasAno, verified.grpven);
 
@@ -909,3 +911,5 @@ const queryPedidosAtendidosDetPorDocNum =
 
 const queryLimiteDisponivel =
   "SELECT IIf( [Compras] > 0, [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) - [Compras], [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, IIF( dbo.FilialEntidadeGrVenda.LimExtraCredito is null, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) ) ) AS LimiteAtual FROM dbo.FilialEntidadeGrVenda LEFT JOIN ( SELECT SE1_GrpVen.GrpVen, Sum(SE1_GrpVen.E1_SALDO) AS Compras FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) AND (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc WHERE (((SE1_Class.E1Desc = 'Compra' ))) GROUP BY SE1_GrpVen.GrpVen ) as SE1_ComprasNVencidas ON dbo.FilialEntidadeGrVenda.A1_GRPVEN = SE1_ComprasNVencidas.GrpVen WHERE ( ((dbo.FilialEntidadeGrVenda.Inatv) Is Null) and dbo.FilialEntidadeGrVenda.A1_GRPVEN = ? )";
+
+const queryPedidosAFaturar = "SELECT IIF(Sum(dbo.PedidosVenda.PrecoTotal) is null, 0, Sum(dbo.PedidosVenda.PrecoTotal)) AS Total FROM dbo.PedidosVenda INNER JOIN dbo.PedidosCompraCab ON (     dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial ) AND (     dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId ) WHERE (     ((dbo.PedidosCompraCab.NroNF) Is Null)     AND ((dbo.PedidosCompraCab.GrpVen) = ?)     AND (    (dbo.PedidosVenda.STATUS) <> 'C'    Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null     ) )"

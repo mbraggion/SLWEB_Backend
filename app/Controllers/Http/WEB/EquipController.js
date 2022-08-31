@@ -19,26 +19,10 @@ class EquipController {
         ClienteStatus: 'A'
       }).orderBy('Nome_Fantasia', 'ASC')
 
-      const confirmPeriod = await Database.raw(confirmEquipPeriod, []);
-
-      let jaReportou = []
-
-      if (confirmPeriod[0]) {
-        jaReportou = await Database
-          .select('*')
-          .from('dbo.RepoEquip')
-          .where({
-            GrpVen: verified.grpven,
-            RepoAno: moment(confirmPeriod[0].de).get('year'),
-            RepoMes: moment(confirmPeriod[0].de).get('month') + 1,
-          })
-      }
-
       response.status(200).send({
         Ativos: ativos,
         Clientes: clientes,
-        ConfirmEqPeriod: confirmPeriod,
-        JaReportou: jaReportou.length > 0 ? true : false,
+        JaReportou: false,
       });
     } catch (err) {
       response.status(400).send()
@@ -318,21 +302,30 @@ class EquipController {
 
   async ConfirmAddresses({ request, response }) {
     const token = request.header("authorization");
-    const { Addresses, RefMes, RefAno } = request.only(["Addresses", "RefMes", "RefAno"]);
+    const { Addresses } = request.only(["Addresses"]);
+
+    let refMes = moment().get('month') + 1
+    let refAno = moment().get('year')
 
     try {
       const verified = seeToken(token);
 
-      Addresses.forEach(async (address) => {
-        await Database.insert({
-          RepoAno: RefAno,
-          RepoMes: RefMes,
-          GrpVen: verified.grpven,
-          EquiCod: address.EquiCod,
-          CNPJn: Number(address.CNPJ),
-          RepoTMS: moment().format('YYYY-MM-DD HH:mm:ss'),
-        }).into("dbo.RepoEquip");
-      })
+      for (let i = 0; i < Addresses.length; i++) {
+
+        // await Database.insert({
+        //   RepoAno: RefAno,
+        //   RepoMes: RefMes,
+        //   GrpVen: verified.grpven,
+        //   EquiCod: Addresses[i].EquiCod,
+        //   CNPJn: Number(Addresses[i].CNPJ),
+        //   RepoTMS: moment().format('YYYY-MM-DD HH:mm:ss'),
+        // }).into("dbo.RepoEquip");
+
+        await Database.raw(
+          "begin tran if exists ( select * from dbo.RepoEquip where GrpVen = ? and RepoAno = ? and RepoMes = ? and EquiCod = ? ) begin update dbo.RepoEquip set CNPJn = ?, RepoTMS = ? where GrpVen = ? and RepoAno = ? and RepoMes = ? and EquiCod = ? end else begin insert into dbo.RepoEquip values (?, ?, ?, ?, ?, ?) end commit tran",
+          [verified.grpven, refAno, refMes, Addresses[i].EquiCod, Number(Addresses[i].CNPJ), moment().format('YYYY-MM-DD HH:mm:ss'), verified.grpven, refAno, refMes, Addresses[i].EquiCod, refAno, refMes, verified.grpven, Addresses[i].EquiCod, Number(Addresses[i].CNPJ), moment().format('YYYY-MM-DD HH:mm:ss')]
+        )
+      }
 
       await Database.table("dbo.FilialEntidadeGrVenda")
         .where({

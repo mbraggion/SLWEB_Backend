@@ -265,10 +265,14 @@ class DreController {
 
       let roy = []
 
+      let refInicio = new Date(ano, (Number(mes)-1)-1, 26)
+
+      let refFim = new Date(ano, Number(mes)-1, 26)
+
       if (jaTemBaseRoy.length > 0) {
         roy = await Database.raw(QUERY_ROY_JA_LANCADO, [ano, mes, verified.user_code])
       } else {
-        roy = await Database.raw(QUERY_ROY_NAO_LANCADO, [verified.grpven, ano, mes])
+        roy = await Database.raw(QUERY_ROY_NAO_LANCADO, [verified.grpven, refInicio, refFim])
       }
 
       objToExcel[0].workSheetColumnNames = jaTemBaseRoy.length > 0 ? ['DtEmissao', 'Razão_Social', 'DOC', 'D_Item', 'ProdId', 'Produto', 'Qtd', 'QtdOK', 'PvnRoy', 'VlrMin', 'Vlr', 'TotalVenda', 'TotalCorrigido'] : ['DataCriacao', 'RazãoSocial', 'Pedido-NF', 'Serie', 'PVSDesc', 'PvdID', 'ProdId', 'Produto', 'PvdQtd', 'Vlr', 'VlrRoy', 'PvdVlrUnit', 'ProdRoy', 'PrVenda']
@@ -372,4 +376,4 @@ class DreController {
 module.exports = DreController;
 
 const QUERY_ROY_JA_LANCADO = "SELECT dbo.BaseRoyDet.DtEmissao, dbo.Cliente.Razão_Social, dbo.BaseRoyDet.DOC, dbo.BaseRoyDet.D_Item, dbo.BaseRoyDet.ProdId, dbo.BaseRoyDet.Produto, dbo.BaseRoyDet.D_QUANT AS Qtd, dbo.BaseRoyDet.QtdOK, dbo.BaseRoyDet.PvnRoy, dbo.BaseRoyDet.VENVLR AS VlrMin, dbo.BaseRoyDet.D_PRCVEN AS Vlr, dbo.BaseRoyDet.D_TOTAL AS TotalVenda, dbo.BaseRoyDet.Total AS TotalCorrigido FROM ( dbo.PedidosVendaCab INNER JOIN dbo.BaseRoyDet ON ( dbo.BaseRoyDet.SERIE = dbo.PedidosVendaCab.PvcSerie ) AND ( dbo.BaseRoyDet.DOC = dbo.PedidosVendaCab.PvcID ) AND ( dbo.PedidosVendaCab.Filial = dbo.BaseRoyDet.M0_CODFIL ) ) INNER JOIN dbo.Cliente ON ( dbo.PedidosVendaCab.CNPJ = dbo.Cliente.CNPJ ) AND ( dbo.PedidosVendaCab.GrpVen = dbo.Cliente.GrpVen ) WHERE ( ((dbo.BaseRoyDet.Ano) = ?) AND ((dbo.BaseRoyDet.Mes) = ?) AND ((dbo.BaseRoyDet.M0_CODFIL) = ?) ) ORDER BY dbo.BaseRoyDet.DtEmissao, dbo.BaseRoyDet.DOC, dbo.BaseRoyDet.D_Item;"
-const QUERY_ROY_NAO_LANCADO = "SELECT Vc.DataCriacao, Trim([Razão_Social]) AS RazãoSocial, IIf([Vc].[NroNF] Is Null, [Vc].[PvcID], [NroNF]) AS [Pedido-NF], IIf([Vc].[SerieNF] Is Null, [Vc].[PvcSerie], [SerieNF]) AS Serie, dbo.PVStatus.PVSDesc, Vd.PvdID, Vd.ProdId, dbo.Produtos.Produto, Vd.PvdQtd, Vd.PvdVlrTotal AS Vlr, IIf( [PrVenda] <> 0, ([PvdQtd] * PrVenda), ([PvdQtd] * PvdVlrUnit) ) AS VlrRoy, Vd.PvdVlrUnit, dbo.Produtos.ProdRoy, dbo.Produtos.PrVenda FROM ( ( dbo.PVStatus INNER JOIN ( dbo.PedidosVendaCab AS Vc INNER JOIN dbo.PedidosVendaDet AS Vd ON (Vc.GrpVen = Vd.GrpVen) AND (Vc.PvcSerie = Vd.PvcSerie) AND (Vc.PvcID = Vd.PvcID) ) ON dbo.PVStatus.PVSCod = Vc.STATUS ) INNER JOIN dbo.Produtos ON Vd.ProdId = dbo.Produtos.ProdId ) LEFT JOIN dbo.Cliente ON (Vc.CNPJ = dbo.Cliente.CNPJ) AND (Vc.GrpVen = dbo.Cliente.GrpVen) WHERE ( ((Vc.GrpVen) = ?) AND ( (Vc.PvTipo) = 'V' Or (Vc.PvTipo) Is Null ) AND ((Year(Vc.DataCriacao)) = ?) AND ((Month(Vc.DataCriacao)) = ?) AND ((dbo.PVStatus.DRE) = 'S') ) ORDER BY Vc.DataCriacao, IIf([Vc].[NroNF] Is Null, [Vc].[PvcID], [NroNF]), Vd.PvdID;"
+const QUERY_ROY_NAO_LANCADO = "SELECT Vc.DataCriacao, Trim([Razão_Social]) AS RazãoSocial, IIf([Vc].[NroNF] Is Null, [Vc].[PvcID], [NroNF]) AS [Pedido-NF], IIf( [Vc].[SerieNF] Is Null, [Vc].[PvcSerie], [SerieNF] ) AS Serie, dbo.PVStatus.PVSDesc, Vd.PvdID, Vd.ProdId, dbo.Produtos.Produto, Vd.PvdQtd, Vd.PvdVlrTotal AS Vlr, IIf( [PrVenda] <> 0, ([PvdQtd] * PrVenda), ([PvdQtd] * PvdVlrUnit) ) AS VlrRoy, Vd.PvdVlrUnit, dbo.Produtos.ProdRoy, dbo.Produtos.PrVenda FROM ( ( dbo.PVStatus INNER JOIN ( dbo.PedidosVendaCab AS Vc INNER JOIN dbo.PedidosVendaDet AS Vd ON (Vc.GrpVen = Vd.GrpVen) AND (Vc.PvcSerie = Vd.PvcSerie) AND (Vc.PvcID = Vd.PvcID) ) ON dbo.PVStatus.PVSCod = Vc.STATUS ) INNER JOIN dbo.Produtos ON Vd.ProdId = dbo.Produtos.ProdId ) LEFT JOIN dbo.Cliente ON (Vc.CNPJ = dbo.Cliente.CNPJ) AND (Vc.GrpVen = dbo.Cliente.GrpVen) WHERE ( ((Vc.GrpVen) = ?) AND ( (Vc.PvTipo) = 'B' Or (Vc.PvTipo) = 'V' Or (Vc.PvTipo) Is Null ) AND ( (Vc.DataCriacao) >= ? And (Vc.DataCriacao) < ? ) AND ((dbo.PVStatus.DRE) = 'S') ) ORDER BY Vc.DataCriacao, IIf([Vc].[NroNF] Is Null, [Vc].[PvcID], [NroNF]), Vd.PvdID"
