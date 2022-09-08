@@ -26,7 +26,101 @@ const printer = new PdfPrinter(fonts);
 moment.locale("pt-br");
 
 class FuturoFranqueadoController {
-  async Show({ request, response }) {
+  async RequestCod_V2({ request, response }) {
+    const { email, formType } = request.only(["email", "formType"]);
+
+    try {
+      let cod = null
+      let achouCod = []
+
+      do {
+        //crio um numero aleatório de 6 posições
+        cod = Math.random().toString().slice(2, 8);
+  
+        //verifico se já não foi usado
+        achouCod = await Database
+        .select('*')
+        .from('dbo.SLWEB_FormularioTipoRespostas')
+        .where({
+          FTR_cod: cod
+        })
+        
+      } while (achouCod.length > 0);
+
+      const formTypeId = await Database
+      .select('FT_id')
+      .from('dbo.SLWEB_FormularioTipo')
+      .where({
+        FT_nome: formType
+      })
+
+      await Database.insert({
+        FT_id: formTypeId[0].FT_id ?? 0,
+        FTR_cod: cod,
+        FTR_aberto: true,
+        FTR_secao: 1,
+        FTR_respostas: null,
+      }).into('dbo.SLWEB_FormularioTipoRespostas')
+
+      await Mail.send(
+        "emails.CodForm",
+        { Codigo: cod, FRONTEND: Env.get('CLIENT_URL') },
+        (message) => {
+          message
+            .to(email.trim())
+            .cc([
+              Env.get("EMAIL_COMERCIAL_2"),
+              Env.get("EMAIL_COMERCIAL_3"),
+              Env.get("EMAIL_SUPORTE"),
+            ])
+            .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+            .subject("Código de acesso ao Formulário");
+        }
+      );
+
+      response.status(201).send('ok');
+    } catch (err) {
+      response.status(400).send();
+      logger.error({
+        token: null,
+        params: null,
+        payload: request.body,
+        err: err,
+        handler: 'FuturoFranqueadoController.RequestCod_V2',
+      })
+    }
+  }
+
+  async FutureCod_V2({ request, response, params }) {
+    const cod = params.cod
+
+    try {
+      // recuperar respostas já dadas
+      let resposta = await Database
+      .select('FTR_aberto', 'FTR_secao', 'FTR_respostas')
+      .from('dbo.SLWEB_FormularioTipoRespostas')
+      .where({ 
+        FTR_cod: cod, 
+      })
+
+      response.status(200).send({
+        SECAO: resposta[0].FTR_secao,
+        CONCLUÍDO: !resposta[0].FTR_aberto,
+        FORM: resposta[0].FTR_respostas
+      });
+    } catch (err) {
+      response.status(400).send();
+      logger.error({
+        token: null,
+        params: params,
+        payload: request.body,
+        err: err,
+        handler: 'FuturoFranqueadoController.FutureCod_V2',
+      })
+    }
+  }
+
+  async Show_V1({ request, response }) {
     const token = request.header("authorization");
 
     try {
@@ -56,7 +150,7 @@ class FuturoFranqueadoController {
     }
   }
 
-  async GeneratePDF({ request, response, params }) {
+  async GeneratePDF_V1({ request, response, params }) {
     const token = request.header("authorization");
     const CodCandidato = params.CodCandidato;
     const path = Helpers.publicPath(`/tmp`);
@@ -65,7 +159,7 @@ class FuturoFranqueadoController {
     try {
       const verified = await seeToken(token);
 
-      if (verified.role === "Franquia") throw Error;
+      if (verified.role === "Franquia") throw new Error('usuário franqueado');
 
       const Form = await Database
         .select("*")
@@ -97,7 +191,7 @@ class FuturoFranqueadoController {
     }
   }
 
-  async FutureCod({ request, response, params }) {
+  async FutureCod_V1({ request, response, params }) {
     const cod = params.cod
 
     try {
@@ -130,7 +224,7 @@ class FuturoFranqueadoController {
     }
   }
 
-  async RequestCod({ request, response }) {
+  async RequestCod_V1({ request, response }) {
     const { email } = request.only(["email"]);
 
     try {
@@ -171,7 +265,7 @@ class FuturoFranqueadoController {
     }
   }
 
-  async FormUpload({ request, response, params }) {
+  async FormUpload_V1({ request, response, params }) {
     const { form, secao } = request.only(["form", "secao"]);
     const candidato = params.CodCandidato;
     const path = Helpers.publicPath(`/tmp`);
@@ -340,7 +434,7 @@ class FuturoFranqueadoController {
     }
   }
 
-  async FileUpload({ request, response }) {
+  async FileUpload_V1({ request, response }) {
     const COD = request.input('cod')
     const MULTI = request.input('multiple')
     const DOC = request.input('doc')

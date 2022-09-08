@@ -106,13 +106,13 @@ Route.get("/administrar/franquia", "ADMIN/FranquiasController.Show").middleware(
 Route.post("/administrar/franquia", "ADMIN/FranquiasController.Store").middleware(['jwt', 'vld:1,1']);
 
 //Formulário de futuros franqueados
-Route.get("/form/check/:cod", "ADMIN/FuturoFranqueadoController.FutureCod"); //checa se o número do futuro franqueado existe no DB
-Route.get("/form/all", "ADMIN/FuturoFranqueadoController.Show").middleware(['jwt', 'vld:1,1']); //retorna todos os formulários
 Route.get("/form/original", "ADMIN/FuturoFranqueadoController.RetriveWORDFORM"); //baixa o formulario .doc
-Route.get("/form/pdf/:CodCandidato", "ADMIN/FuturoFranqueadoController.GeneratePDF").middleware(['jwt', 'vld:1,1']); //retorna pdf do formulario
-Route.post("/form/solicitacao", "ADMIN/FuturoFranqueadoController.RequestCod"); //solicita código de acesso
-Route.post("/form/upload/files", "ADMIN/FuturoFranqueadoController.FileUpload"); //faz upload de arquivos
-Route.post("/form/upload/form/:CodCandidato", "ADMIN/FuturoFranqueadoController.FormUpload"); //faz upload do formulario
+Route.post("/form/solicitacao", "ADMIN/FuturoFranqueadoController.RequestCod_V2"); //solicita código de acesso
+Route.get("/form/check/:cod", "ADMIN/FuturoFranqueadoController.FutureCod_V2"); //checa se o número do futuro franqueado existe no DB
+// Route.get("/form/all", "ADMIN/FuturoFranqueadoController.Show").middleware(['jwt', 'vld:1,1']); //retorna todos os formulários
+// Route.get("/form/pdf/:CodCandidato", "ADMIN/FuturoFranqueadoController.GeneratePDF").middleware(['jwt', 'vld:1,1']); //retorna pdf do formulario
+// Route.post("/form/upload/files", "ADMIN/FuturoFranqueadoController.FileUpload"); //faz upload de arquivos
+// Route.post("/form/upload/form/:CodCandidato", "ADMIN/FuturoFranqueadoController.FormUpload"); //faz upload do formulario
 
 //Dashboard
 Route.get("/dashboard/filiais", "WEB/GeneralController.Filiais").middleware(['jwt', 'vld:1,1']); //retorna pdf do formulario
