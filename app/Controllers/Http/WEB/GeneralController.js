@@ -38,7 +38,9 @@ class GeneralController {
       const verified = seeToken(token);
 
       const news = await Database.raw("select NS.*, NSC.DtConfirmacao from dbo.NewsSLWEB as NS left join dbo.NewsSLWEBConfirmacao as NSC on NS.NewsId = NSC.NewsId and NSC.GrpVen = ? where NS.BannerStatus = 'A' order by NS.NewsId DESC", [verified.grpven])
-
+      Database.raw('execute dbo.sp_SLRaspyApp')
+      Database.raw('execute dbo.sp_SLTELLeituraApp')
+      
       response.status(200).send({
         News: news
       })

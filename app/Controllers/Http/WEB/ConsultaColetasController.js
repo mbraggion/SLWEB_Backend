@@ -70,9 +70,20 @@ class ConsultaColetasController {
       const verified = seeToken(token);
 
       const dadosParaCalculoDeMinimo = await Database.raw(queryCalculoDeMinimo, [verified.grpven, Equicod])
+      const faixaDeConsumo = await Database.select('*')
+        .from('dbo.AnexosFaixasConsumo')
+        .where({
+          GrpVen: verified.grpven,
+          AnxId: dadosParaCalculoDeMinimo[0].AnxId
+        })
 
       response.status(200).send({
-        DadosParaCalculoDeMinimo: dadosParaCalculoDeMinimo[0]
+        DadosParaCalculoDeMinimo: dadosParaCalculoDeMinimo[0],
+        FaixaDeConsumo: faixaDeConsumo.map(f => ({
+          Inicio: f.AFCIni,
+          Fim: f.AFCFin,
+          Porcentagem: f.AFCPorc
+        }))
       })
     } catch (err) {
       response.status(400).send()
@@ -313,4 +324,4 @@ const queryLeiturasDisponiveis = "SELECT dbo.SLTELLeitura.LeituraId, dbo.SLTELLe
 
 const queryLeituraDetalhes = "SELECT LS.Selecao, LS.QuantidadeVendaPaga, LS.QuantidadeVendaTeste, PV.PvpVvn1, PV.PvpVvn2, P.Produto, P.ProdId, PV.TveId FROM dbo.SLTEL_LeituraSelecao AS LS left join dbo.PVPROD as PV on LS.Selecao = PV.PvpSel left join dbo.Produtos as P on PV.ProdId  = P.ProdId WHERE LS.LeituraId = ? and PV.AnxId = ? and PV.PdvId = ? AND PV.GrpVen = ?"
 
-const queryCalculoDeMinimo = "select P.PdvConsMin, P.PdvConsValor, P.PdvConsDose, P.PdvSomaCompartilhado, A.CalcFatId, A.AnxDiaFecha, A.AnxProRata, A.AnxFatMinimo, A.AnxCalcMinPor, A.AnxTipMin, A.AnxMinMoeda, A.ProdId,A.AnxVlrUnitMin from dbo.PontoVenda as P inner join dbo.Anexos as A on P.AnxId = A.AnxId and P.GrpVen = A.GrpVen where P.GrpVen = ? and P.PdvStatus = 'A' and P.EquiCod = ?"
+const queryCalculoDeMinimo = "select A.AnxId, P.PdvConsMin, P.PdvConsValor, P.PdvConsDose, P.PdvSomaCompartilhado, A.CalcFatId, A.AnxDiaFecha, A.AnxProRata, A.AnxFatMinimo, A.AnxCalcMinPor, A.AnxTipMin, A.AnxMinMoeda, A.ProdId,A.AnxVlrUnitMin from dbo.PontoVenda as P inner join dbo.Anexos as A on P.AnxId = A.AnxId and P.GrpVen = A.GrpVen where P.GrpVen = ? and P.PdvStatus = 'A' and P.EquiCod = ?"

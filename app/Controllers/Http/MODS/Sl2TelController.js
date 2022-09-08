@@ -95,14 +95,14 @@ class Sl2TelController {
       /*para cada item do array de instalacoes com encerramento 'null' vou 
       verificar se é a instalação do mesmo cliente, se não for, encerro-a, se não,
       ignoro e altero o valor da variavel que indica instalacao já existente */
-      instalacoesAtivo.forEach(async (instalacao) => {
-        if (instalacao.ClienteId !== IdGeral) {
-          await FecharInstalacoes(tokenTMT.data.access_token, instalacao)
+      for(let i = 0; i < instalacoesAtivo; i++){
+        if (instalacoesAtivo[i].ClienteId !== IdGeral) {
+          await FecharInstalacoes(tokenTMT.data.access_token, instalacoesAtivo[i])
         } else {
           alreadyLinkedToClient = true
         }
-      })
-
+      }
+      
       console.log('4')
 
       //se eu não encontrar nenhuma instalacao, crio uma nova, se sim, ignoro
