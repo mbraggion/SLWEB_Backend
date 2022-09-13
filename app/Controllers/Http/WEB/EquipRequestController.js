@@ -400,13 +400,13 @@ class EquipRequestController {
 
     try {
       const verified = seeToken(token);
-
+      
       cab = await Database.raw(CabeçalhoDaOS, [OSID])
       contenedores = await Database.raw(ContenedoresDaOS, [OSID])
       det = await Database.raw(DetalhesDaOS, [OSID])
       Dados = await Database.select("GrupoVenda", "M0_CGC", 'Email', 'M0_CODFIL')
-        .from("dbo.FilialEntidadeGrVenda")
-        .where({ A1_GRPVEN: cab[0].GrpVen });
+      .from("dbo.FilialEntidadeGrVenda")
+      .where({ A1_GRPVEN: cab[0].GrpVen });
       PathWithName = `${path}/${cab[0].OSCPDF}`
 
       const Solicitacao = {
