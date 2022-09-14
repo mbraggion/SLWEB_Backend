@@ -43,6 +43,7 @@ class FuturoFranqueadoController {
         FTR_aberto: true,
         FTR_secao: 1,
         FTR_respostas: null,
+        FTR_emai: email.trim()
       }).into('dbo.SLWEB_FormularioTipoRespostas')
 
       await Mail.send(
@@ -61,7 +62,7 @@ class FuturoFranqueadoController {
         }
       );
 
-      response.status(201).send('ok');
+      response.status(201).send();
     } catch (err) {
       response.status(400).send();
       logger.error({
@@ -87,7 +88,7 @@ class FuturoFranqueadoController {
         })
 
       let perguntas = await Database
-        .select('FTP_id', 'FTP_slug', 'FTP_q', 'FTP_t', 'FTP_i', 'FTP_s', 'FTP_d')
+        .select('FTP_id', 'FTP_slug', 'FTP_q', 'FTP_o', 'FTP_t', 'FTP_i', 'FTP_s', 'FTP_d')
         .from('dbo.SLWEB_FormularioTipoPerguntas')
         .where({
           FT_id: resposta[0].FT_id
@@ -108,6 +109,7 @@ class FuturoFranqueadoController {
         let p = {
           questionId: pergunta.FTP_id,
           question: pergunta.FTP_q,
+          questionOptions: JSON.parse(pergunta.FTP_o),
           answer: prevAnswer,
           answerComponentType: pergunta.FTP_t,
           invalidMessage: pergunta.FTP_i,
@@ -133,6 +135,7 @@ class FuturoFranqueadoController {
         FORM: form
       });
     } catch (err) {
+      console.log(err.message)
       response.status(400).send();
       logger.error({
         token: null,
