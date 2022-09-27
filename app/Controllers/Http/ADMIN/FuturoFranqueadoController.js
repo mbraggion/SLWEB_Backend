@@ -7,6 +7,7 @@ const Env = use("Env");
 const fs = require("fs");
 const toArray = require('stream-to-array')
 const Helpers = use("Helpers");
+const archiver = require('archiver');
 const moment = require('moment')
 const logger = require("../../../../dump/index")
 const PdfPrinter = require("pdfmake");
@@ -97,7 +98,7 @@ class FuturoFranqueadoController {
     const cod = params.cod
 
     try {
-      
+
       let resposta = await Database
         .select('FT_id', 'FTR_aberto', 'FTR_secao', 'FTR_respostas')
         .from('dbo.SLWEB_FormularioTipoRespostas')
@@ -111,6 +112,7 @@ class FuturoFranqueadoController {
         .where({
           FT_id: resposta[0].FT_id
         })
+        .orderBy('FTP_ordem', 'asc')
 
       let form = {
         NC: []
@@ -169,6 +171,9 @@ class FuturoFranqueadoController {
     const { form, secao } = request.only(["form", "secao"]);
     const candidato = params.CodCandidato;
 
+    const path = Helpers.publicPath(`/tmp`);
+    const PathWithName = `${path}/${candidato}-${new Date().getTime()}.pdf`;
+
     try {
       let respostas = []
 
@@ -195,42 +200,96 @@ class FuturoFranqueadoController {
           FTR_DtPreenchido: secao === null ? moment().toDate() : null
         })
 
-      if (secao === 9) {
+      if (Object.keys(form)[secao] === 'Encerramento') {
+        const info = await Database
+          .select('FTR_email')
+          .from('dbo.SLWEB_FormularioTipoRespostas')
+          .where({
+            FTR_cod: candidato,
+            FTR_aberto: true,
+          })
+
+        let nomeDest = null
+        let consultorDest = null
+
+        // encontro o nome do candidato
+        for (let s = 1; s < Object.keys(form).length; s++) {
+          for (let q = 0; q < form[Object.keys(form)[s]].length; q++) {
+            if (form[Object.keys(form)[s]][q].slug === 'Nome') {
+              nomeDest = form[Object.keys(form)[s]][q].answer
+            }
+          }
+        }
+
+        // encontro o consultor ref
+        for (let s = 1; s < Object.keys(form).length; s++) {
+          for (let q = 0; q < form[Object.keys(form)[s]].length; q++) {
+            if (form[Object.keys(form)[s]][q].slug === 'Consultor') {
+              consultorDest = form[Object.keys(form)[s]][q].answer
+            }
+          }
+        }
+
         // envio email pro candidato que preencheu
+        await Mail.send(
+          "emails.FormFranquiaPreenchidoFF",
+          { Destinatario: String(nomeDest).split(" ")[0] },
+          (message) => {
+            message
+              .to(String(info[0].FTR_email).slice(0, 250))
+              .cc(Env.get("EMAIL_SUPORTE"))
+              .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+              .subject("Formulário de Perfil")
+          }
+        );
 
-        // await Mail.send(
-        //   "emails.FormFranquiaPreenchidoFF",
-        //   { Destinatario: String(form.Nome_Completo).split(" ")[0] },
-        //   (message) => {
-        //     message
-        //       .to(String(form.Email).slice(0, 250))
-        //       .cc(Env.get("EMAIL_SUPORTE"))
-        //       .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
-        //       .subject("Formulário de Franquia recebido")
-        //   }
-        // );
+        let emailConsultor = null
 
-        // gero PDF do questionário
+        switch (consultorDest) {
+          case 'Alessandro':
+            emailConsultor = 'alessandro.pinheiro@pilaoprofessional.com.br'
+            break;
+          case 'Iris':
+            emailConsultor = 'iris.moreno@pilaoprofessional.com.br'
+            break;
+          case 'Tatiane':
+            emailConsultor = 'tatiane.silva@pilaoprofessional.com.br'
+            break;
+          default:
+            emailConsultor = null
+            break;
+        }
 
         // se consultor !== null
-        // await Mail.send(
-        //   "emails.FormFranquiaPreenchidoConsultor",
-        //   {
-        //     Consultor: form.Consultor,
-        //     INTERESSADO: String(form.Nome_Completo).split(" ")[0],
-        //     Frontend: Env.get('CLIENT_URL')
-        //   },
-        //   (message) => {
-        //     message
-        //       .to(emailConsultor)
-        //       .cc(Env.get("EMAIL_SUPORTE"))
-        //       .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
-        //       .subject("Formulário de Franquia preenchido")
-        //       .attach(PathWithName, {
-        //         filename: `Formulário de Perfil_${candidato}.pdf`,
-        //       })
-        //   }
-        // );
+        if (emailConsultor !== null) {
+
+          // gero PDF do questionário
+          const PDFModel = PDFGen(form);
+
+          var pdfDoc = printer.createPdfKitDocument(PDFModel);
+          pdfDoc.pipe(fs.createWriteStream(PathWithName));
+          pdfDoc.end();
+
+          // envio email pro consultor que indicou a franquia
+          await Mail.send(
+            "emails.FormFranquiaPreenchidoConsultor",
+            {
+              Consultor: consultorDest,
+              INTERESSADO: nomeDest,
+              Frontend: Env.get('CLIENT_URL')
+            },
+            (message) => {
+              message
+                .to(emailConsultor)
+                .cc(Env.get("EMAIL_SUPORTE"))
+                .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+                .subject("Formulário de Franquia preenchido")
+                .attach(PathWithName, {
+                  filename: `Formulário de Perfil_${candidato}.pdf`,
+                })
+            }
+          );
+        }
 
       }
 
@@ -251,8 +310,11 @@ class FuturoFranqueadoController {
     const COD = request.input('cod')
     const MULTI = request.input('multiple')
     const formData = request.file("formData", { types: ["image", "pdf"], size: "10mb" });
+    const qId = request.input(('qId'))
+
     const path = Helpers.publicPath(`/DOCS/${COD}`);
     let newFileName = ''
+    let filenames = [];
     let file = null
 
     try {
@@ -277,8 +339,6 @@ class FuturoFranqueadoController {
           file
         );
       } else {
-        let filenames = [];
-
         await formData.moveAll(path, (file, i) => {
           newFileName = `upload-MULTIPLE-${COD}-${i + 1}-${new Date().getTime()}.${file.subtype}`;
           filenames.push(newFileName);
@@ -305,7 +365,6 @@ class FuturoFranqueadoController {
 
       response.status(200).send();
     } catch (err) {
-      console.log(err.message)
       response.status(400).send();
       logger.error({
         token: null,
@@ -323,10 +382,10 @@ class FuturoFranqueadoController {
     try {
 
       let fixedForm = []
-      const Form = await Database.raw('select FT.FT_id as "ID Form", FT.FT_nome as "Nome Form", FTP.FTP_id as "ID Questao", FTP.FTP_slug as "Slug", FTP.FTP_s as "Segmento", FTR.FTR_aberto as "Aberto", FTR.FTR_secao as "Secao", FTR.FTR_respostas as "respostas", FTR.FTR_cod as "Codigo", FTR.FTR_DtSolicitado as "Dt. Solicitado", FTR.FTR_email  as "email", FTP.FTP_t as Tipo , FTR.FTR_DtPreenchido as "Dt. Preenchido" from dbo.SLWEB_FormularioTipo as FT right join dbo.SLWEB_FormularioTipoPerguntas as FTP on FT.FT_id = FTP.FT_id right join dbo.SLWEB_FormularioTipoRespostas as FTR on FTP.FT_id = FTR.FT_id')
+      const Form = await Database.raw(QUERY_SHOW_ALL_FORMS)
 
       Form.forEach(f => {
-        if(fixedForm.filter(ff => ff.Cod === f.Codigo).length === 0){
+        if (fixedForm.filter(ff => ff.Cod === f.Codigo).length === 0) {
           fixedForm.push({
             Cod: f.Codigo,
             Email: f.email,
@@ -352,17 +411,17 @@ class FuturoFranqueadoController {
 
         // criar uma propriedade para cada nome de sessao
         sectionNames.forEach(sn => {
-          fixedForm[i].Questions = { ...fixedForm[i].Questions, [sn]: []}
+          fixedForm[i].Questions = { ...fixedForm[i].Questions, [sn]: [] }
         })
 
         // popular as sessoes com as respectivas questoes && atribuir respostas as questoes
         qs.forEach(q => {
           let prevAnswer = q.respostas !== null
-          ? JSON.parse(q.respostas)
-            .filter(ans => Number(ans.id) === Number(q["ID Questao"]))
-          : null
+            ? JSON.parse(q.respostas)
+              .filter(ans => Number(ans.id) === Number(q["ID Questao"]))
+            : null
 
-        prevAnswer = Array.isArray(prevAnswer) && prevAnswer.length > 0 ? prevAnswer[0].value : null
+          prevAnswer = Array.isArray(prevAnswer) && prevAnswer.length > 0 ? prevAnswer[0].value : null
 
 
           fixedForm[i].Questions[q.Segmento].push({
@@ -379,7 +438,6 @@ class FuturoFranqueadoController {
       });
     } catch (err) {
       response.status(400).send();
-      console.log(err.message)
       logger.error({
         token: token,
         params: null,
@@ -471,6 +529,42 @@ class FuturoFranqueadoController {
     }
   }
 
+  async GenerateZip({ request, response, params }) {
+    const token = request.header("authorization");
+    const CodCandidato = params.CodCandidato;
+
+    const path = Helpers.publicPath(`/tmp`);
+    const outPath = `${path}/${CodCandidato}-${new Date().getTime()}.zip`;
+    const sourcePath = `\\\\192.168.1.250\\dados\\Franquia\\SLWEB\\DOCS\\${CodCandidato}`
+
+    try {
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      const stream = fs.createWriteStream(outPath);
+
+      await new Promise((resolve, reject) => {
+        archive
+          .directory(sourcePath, false)
+          .on('error', err => reject(err))
+          .pipe(stream);
+
+        stream.on('close', () => resolve());
+        archive.finalize();
+      })
+
+      response.status(200).attachment(outPath);
+    } catch (err) {
+      console.log(err.message)
+      response.status(400).send();
+      logger.error({
+        token: token,
+        params: params,
+        payload: request.body,
+        err: err,
+        handler: 'FuturoFranqueadoController.GeneratePDF',
+      })
+    }
+  }
+
   async RetriveWORDFORM({ response }) {
     try {
       // PUXO O FORMULÁRIO DA REDE
@@ -492,3 +586,5 @@ class FuturoFranqueadoController {
 }
 
 module.exports = FuturoFranqueadoController;
+
+const QUERY_SHOW_ALL_FORMS = 'select FT.FT_id as "ID Form", FT.FT_nome as "Nome Form", FTP.FTP_id as "ID Questao", FTP.FTP_slug as "Slug", FTP.FTP_s as "Segmento", FTR.FTR_aberto as "Aberto", FTR.FTR_secao as "Secao", FTR.FTR_respostas as "respostas", FTR.FTR_cod as "Codigo", FTR.FTR_DtSolicitado as "Dt. Solicitado", FTR.FTR_email  as "email", FTP.FTP_t as Tipo , FTR.FTR_DtPreenchido as "Dt. Preenchido" from dbo.SLWEB_FormularioTipo as FT right join dbo.SLWEB_FormularioTipoPerguntas as FTP on FT.FT_id = FTP.FT_id right join dbo.SLWEB_FormularioTipoRespostas as FTR on FTP.FT_id = FTR.FT_id order by FTR.FTR_DtSolicitado desc'

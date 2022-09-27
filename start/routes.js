@@ -113,6 +113,7 @@ Route.post("/form/upload/form/:CodCandidato", "ADMIN/FuturoFranqueadoController.
 Route.post("/form/upload/files", "ADMIN/FuturoFranqueadoController.FileUpload"); //faz upload de arquivos
 Route.get("/form/all", "ADMIN/FuturoFranqueadoController.Show").middleware(['jwt', 'vld:1,1']); //retorna todos os formulários
 Route.get("/form/pdf/:CodCandidato", "ADMIN/FuturoFranqueadoController.GeneratePDF").middleware(['jwt', 'vld:1,1']); //retorna pdf do formulario
+Route.get("/form/zip/:CodCandidato", "ADMIN/FuturoFranqueadoController.GenerateZip").middleware(['jwt', 'vld:1,1']); //retorna zip dos arquivos do formulário
 
 //Dashboard
 Route.get("/dashboard/filiais", "WEB/GeneralController.Filiais").middleware(['jwt', 'vld:1,1']); //retorna pdf do formulario

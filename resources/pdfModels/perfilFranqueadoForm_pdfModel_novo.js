@@ -55,6 +55,9 @@ exports.PDFGen = (Form) => {
 };
 
 const genColumnDef = (sessaoNome, questoes) => {
+  if(sessaoNome === 'Encerramento'){
+    return
+  }
   let aux = []
 
   aux.push({ text: sessaoNome, style: "subheader" })
