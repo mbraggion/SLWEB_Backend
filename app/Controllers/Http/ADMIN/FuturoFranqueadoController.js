@@ -553,7 +553,6 @@ class FuturoFranqueadoController {
 
       response.status(200).attachment(outPath);
     } catch (err) {
-      console.log(err.message)
       response.status(400).send();
       logger.error({
         token: token,

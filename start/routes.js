@@ -139,6 +139,9 @@ Route.delete("/coletas/detalhes/apagar/:EquiCod/:AnxId/:PdvId/:FfmSeq", "WEB/Con
 
 //Contratos
 Route.get('/contratos', "WEB/ContractController.Show").middleware(['jwt', 'vld:0,1'])
+Route.get('/contratos/:tipo/:cnpj/:conid', "WEB/ContractController.See").middleware(['jwt', 'vld:0,1'])
+Route.put('/contratos/:tipo/:cnpj/:conid', "WEB/ContractController.Update").middleware(['jwt', 'vld:0,1'])
+Route.post('/contratos/upload', "WEB/ContractController.Upload").middleware(['jwt', 'vld:0,1'])
 
 //Pontos de Venda
 Route.get("/pontosdevenda", "WEB/PontosDeVendaController.Show").middleware(['jwt', 'vld:0,1']); //retorna todos os pontos de venda do franqueado

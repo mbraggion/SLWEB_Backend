@@ -71,25 +71,32 @@ class CompraController {
     try {
       const verified = seeToken(token);
 
+      // pego umas info geral sobre compra
       const InfoCompras = await Database.raw(queryGigante1, [verified.grpven]);
 
+      // verifico se o cara ta bloqueado
       const InfoBloqueado = await Database.raw(queryBloqueado, [
         verified.grpven,
       ]);
 
+      // busco as duplicatas em aberto
       const DuplicatasAberto = await Database.raw(
         queryDuplicatas,
         verified.grpven
       );
 
+      // busco pedidos feitos ainda não faturados
       const PedidosNaoFaturados = await Database.raw(queryPedidosAFaturar, [verified.grpven]);
 
+      // busco as compras feitas durante o ano
       const ComprasAoAno = await Database.raw(queryComprasAno, verified.grpven);
 
-      const Reputacao = await Database.select('Confiavel').from('dbo.FilialEntidadeGrVenda').where({
+      // verifico se o cara já tentou fazer algum scam com a empresa
+      const Info = await Database.select('Confiavel', 'VlrMinCompra', 'UF').from('dbo.FilialEntidadeGrVenda').where({
         A1_GRPVEN: verified.grpven
       })
 
+      // crio um obj bonitinho combinando alguns dados
       const Geral = {
         ...Object.assign(InfoCompras[0], InfoBloqueado[0]),
         Compras: InfoCompras[0].Compras + PedidosNaoFaturados[0].Total,
@@ -98,7 +105,8 @@ class CompraController {
 
       let nCompensa = []
 
-      if (!Reputacao[0].Confiavel) {
+      // se a reputacao do cara nao for legal, pego uma lista do que ele tem em aberto e nao vai poder compensar
+      if (!Info[0].Confiavel) {
         nCompensa = await Database
           .select('E1Prefixo as E1_PREFIXO', 'E1Num as E1_NUM', 'E1Parcela as E1_PARCELA')
           .from('dbo.SE1_exc')
@@ -112,8 +120,10 @@ class CompraController {
         Duplicatas: DuplicatasAberto,
         ComprasAno: ComprasAoAno,
         AFaturar: PedidosNaoFaturados,
-        Confiavel: Reputacao[0].Confiavel,
-        NaoCompensavel: nCompensa
+        Confiavel: Info[0].Confiavel,
+        NaoCompensavel: nCompensa,
+        VlrMinCompra: Info[0].VlrMinCompra,
+        Retira: Info[0].UF === 'UF' ? true : false 
       });
     } catch (err) {
       response.status(400).send();
@@ -289,7 +299,7 @@ class CompraController {
 
       //verifico se o pedido tem pelo menos 1 item
       if (Items.length === 0) {
-        throw new Error();
+        throw new Error('Nenhum item registrado para compra');
       }
 
       //testar se o cara tem limite
@@ -303,6 +313,7 @@ class CompraController {
       );
 
       let TotalDoPedido = 0;
+
       Items.map(
         (item) =>
         (TotalDoPedido +=
@@ -314,14 +325,15 @@ class CompraController {
         limite[0].LimiteAtual - PedidosNaoFaturados[0].Total - TotalDoPedido <=
         0
       ) {
-        throw new Error();
+        throw new Error('Limite insuficiente');
       }
 
 
       //testo se o cara ta bloqueado
       const bloqueado = await Database.raw(queryBloqueado, [verified.grpven]);
-      if (bloqueado[0] && bloqueado[0].Bloqueado === "S") {
-        throw new Error();
+
+      if (bloqueado.length === 0 || bloqueado[0].Bloqueado === "S") {
+        throw new Error('Franqueado bloqueado');
       }
 
       //busco dados do franqueado
@@ -384,9 +396,9 @@ class CompraController {
           }).into("dbo.PedidosVenda")
       );
 
-      response.status(200).send(TotalDoPedido);
+      response.status(200).send();
     } catch (err) {
-      response.status(400).send();
+      response.status(400).send(err.message);
       logger.error({
         token: token,
         params: null,
