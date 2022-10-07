@@ -35,7 +35,7 @@ class CompraController {
     try {
       seeToken(token);
 
-      Database.raw('execute dbo.sp_AcertaPedCompra')
+      await Database.raw('execute dbo.sp_AcertaPedCompra')
 
       const Produtos = await Database.raw(queryProdutos);
       const Desconto = await Database
@@ -309,6 +309,7 @@ class CompraController {
           Number(item.QCompra) * (Number(item.QtMin) * (Number(item.VlrUn) * ((AVista ? 0.95 : 1) + (Desconto && item.ProdRoy === 1 ? Desconto : 1) - 1))))
       );
 
+      // testo o limite do cara - a faturar - total do pedido
       if (
         limite[0].LimiteAtual - PedidosNaoFaturados[0].Total - TotalDoPedido <=
         0
