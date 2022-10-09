@@ -191,7 +191,7 @@ class EquipController {
         });
 
       } else {
-        console.log(`Esse trecho não deve executar nunca, mas vou deixar esse log aqui só pra monitorar... Máquina ${oldPdv.EquiCod}, ClienteNovo ${newCliente.CNPJ}`)
+        console.log(`Esse trecho não deve executar, mas vou deixar esse log aqui só pra monitorar... Máquina ${oldPdv.EquiCod}, ClienteNovo ${newCliente.CNPJ}`)
       }
 
       await Database.table("dbo.PVPROD")

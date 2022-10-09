@@ -138,10 +138,11 @@ Route.post("/coletas/novacoleta/", "WEB/ConsultaColetasController.GravaColeta").
 Route.delete("/coletas/detalhes/apagar/:EquiCod/:AnxId/:PdvId/:FfmSeq", "WEB/ConsultaColetasController.Delete").middleware(['jwt', 'vld:0,1']); //deleta coleta
 
 //Contratos
-Route.get('/contratos', "WEB/ContractController.Show").middleware(['jwt', 'vld:0,1'])
-Route.get('/contratos/:tipo/:cnpj/:conid', "WEB/ContractController.See").middleware(['jwt', 'vld:0,1'])
-Route.put('/contratos/:tipo/:cnpj/:conid', "WEB/ContractController.Update").middleware(['jwt', 'vld:0,1'])
-Route.post('/contratos/upload', "WEB/ContractController.Upload").middleware(['jwt', 'vld:0,1'])
+Route.get('/contracts', "WEB/ContractController.Show").middleware(['jwt', 'vld:0,1'])
+Route.get('/contracts/documents/:cnpj/:conid/:filename', "WEB/ContractController.Download").middleware(['jwt', 'vld:0,1'])
+Route.get('/contracts/info/:tipo/:cnpj/:conid', "WEB/ContractController.See").middleware(['jwt', 'vld:0,1'])
+Route.put('/contracts/info/:tipo/:cnpj/:conid', "WEB/ContractController.Update").middleware(['jwt', 'vld:0,1'])
+Route.post('/contracts/upload', "WEB/ContractController.Upload").middleware(['jwt', 'vld:0,1'])
 
 //Pontos de Venda
 Route.get("/pontosdevenda", "WEB/PontosDeVendaController.Show").middleware(['jwt', 'vld:0,1']); //retorna todos os pontos de venda do franqueado
