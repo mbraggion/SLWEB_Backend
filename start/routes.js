@@ -139,10 +139,17 @@ Route.delete("/coletas/detalhes/apagar/:EquiCod/:AnxId/:PdvId/:FfmSeq", "WEB/Con
 
 //Contratos
 Route.get('/contracts', "WEB/ContractController.Show").middleware(['jwt', 'vld:0,1'])
+Route.put('/contracts/:cnpj/:conid', "WEB/ContractController.Inativar").middleware(['jwt', 'vld:0,1'])
 Route.get('/contracts/documents/:cnpj/:conid/:filename', "WEB/ContractController.Download").middleware(['jwt', 'vld:0,1'])
 Route.get('/contracts/info/:tipo/:cnpj/:conid', "WEB/ContractController.See").middleware(['jwt', 'vld:0,1'])
 Route.put('/contracts/info/:tipo/:cnpj/:conid', "WEB/ContractController.Update").middleware(['jwt', 'vld:0,1'])
 Route.post('/contracts/upload', "WEB/ContractController.Upload").middleware(['jwt', 'vld:0,1'])
+
+//Deposits
+Route.get('/deposits', "WEB/DepositsController.Show").middleware(['jwt', 'vld:0,1'])
+
+//Inventario
+Route.get('/inventario/:ref', "WEB/InventoryController.See").middleware(['jwt', 'vld:0,1'])
 
 //Pontos de Venda
 Route.get("/pontosdevenda", "WEB/PontosDeVendaController.Show").middleware(['jwt', 'vld:0,1']); //retorna todos os pontos de venda do franqueado
@@ -173,8 +180,10 @@ Route.put('/files/permissions/', 'WEB/CompartilhamentoController.UpdateIndexedFo
 Route.put('/files/rename/', 'WEB/CompartilhamentoController.Rename').middleware(['jwt', 'vld:1,1']);
 Route.put('/files/move/', 'WEB/CompartilhamentoController.Move').middleware(['jwt', 'vld:1,1']);
 
+// Referencia
+Route.get('/referencia', 'WEB/ReferenceController.Show').middleware(['jwt', 'vld:0,1']);
+
 //DRE
-Route.get('/dre/referencia', 'WEB/DreController.Show').middleware(['jwt', 'vld:0,1']);
 Route.get('/dre/:ano/:mes', 'WEB/DreController.See').middleware(['jwt', 'vld:0,1']);
 Route.put('/dre', 'WEB/DreController.UpdateDRE').middleware(['jwt', 'vld:0,1']);
 Route.put('/dov', 'WEB/DreController.UpdateDOV').middleware(['jwt', 'vld:0,1']);

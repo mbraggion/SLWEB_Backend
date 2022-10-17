@@ -55,7 +55,7 @@ class FuturoFranqueadoController {
         })
 
       await Database.insert({
-        FT_id: formTypeId[0].FT_id ?? 0,
+        FT_id: formTypeId[0].FT_id ? formTypeId[0].FT_id : 0,
         FTR_cod: cod,
         FTR_aberto: true,
         FTR_secao: 1,

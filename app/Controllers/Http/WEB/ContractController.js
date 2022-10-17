@@ -317,11 +317,11 @@ class ContractController {
     const CNPJ = params.cnpj
     const ConId = params.conid
 
-    try{
+    try {
       const verified = seeToken(token);
 
       response.attachment(`\\\\192.168.1.250\\dados\\Franquia\\SLWEB\\CONTRATOS\\${verified.user_code}\\${CNPJ}\\${ConId}\\${decodeURI(filename)}`)
-    }catch(err){
+    } catch (err) {
       response.status(400).send();
       logger.error({
         token: token,
@@ -329,6 +329,63 @@ class ContractController {
         payload: request.body,
         err: err,
         handler: 'ContractController.Download',
+      })
+    }
+  }
+
+  async Inativar({ request, response, params }) {
+    const token = request.header("authorization");
+    const CNPJ = params.cnpj
+    const ConId = params.conid
+    const { action } = request.only(['action'])
+
+    try {
+      const verified = seeToken(token);
+
+      if (action === 'inativar') {
+        const usado = await Database.select('*')
+          .from('dbo.PontoVenda')
+          .where({
+            GrpVen: verified.grpven,
+            PdvStatus: 'A',
+            ConId: ConId,
+            CNPJ: CNPJ,
+          })
+
+        if (usado.length > 0) {
+          throw new Error('Contrato está em uso')
+        } else {
+          await Database.table("dbo.Contrato")
+            .where({
+              CNPJ: CNPJ,
+              ConId: ConId,
+              GrpVen: verified.grpven
+            })
+            .update({
+              ConStatus: 'I'
+            })
+        }
+      } else {
+        await Database.table("dbo.Contrato")
+          .where({
+            CNPJ: CNPJ,
+            ConId: ConId,
+            GrpVen: verified.grpven
+          })
+          .update({
+            ConStatus: 'A'
+          })
+      }
+
+      response.status(200).send();
+    } catch (err) {
+      response.status(400).send();
+      logger.error({
+        token: token,
+        params: null,
+        payload: request.body,
+        err: err,
+        handler: 'ContractController.Inativar',
       })
     }
   }
