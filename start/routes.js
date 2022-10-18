@@ -139,6 +139,7 @@ Route.delete("/coletas/detalhes/apagar/:EquiCod/:AnxId/:PdvId/:FfmSeq", "WEB/Con
 
 //Contratos
 Route.get('/contracts', "WEB/ContractController.Show").middleware(['jwt', 'vld:0,1'])
+Route.post('/contracts', "WEB/ContractController.Store").middleware(['jwt', 'vld:0,1'])
 Route.put('/contracts/:cnpj/:conid', "WEB/ContractController.Inativar").middleware(['jwt', 'vld:0,1'])
 Route.get('/contracts/documents/:cnpj/:conid/:filename', "WEB/ContractController.Download").middleware(['jwt', 'vld:0,1'])
 Route.get('/contracts/info/:tipo/:cnpj/:conid', "WEB/ContractController.See").middleware(['jwt', 'vld:0,1'])

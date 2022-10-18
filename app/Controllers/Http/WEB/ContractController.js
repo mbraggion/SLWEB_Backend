@@ -21,7 +21,19 @@ class ContractController {
           GrpVen: verified.grpven
         })
 
-      response.status(200).send({ contracts: contracts });
+      const clientes = await Database
+        .select('CNPJ', 'Nome_Fantasia')
+        .from('dbo.Cliente')
+        .where({
+          GrpVen: verified.grpven,
+          ClienteStatus: 'A'
+        })
+        .orderBy('Nome_Fantasia', 'ASC')
+
+      response.status(200).send({
+        contracts: contracts,
+        activeClientes: clientes
+      });
     } catch (err) {
       response.status(400).send();
       logger.error({
@@ -149,6 +161,126 @@ class ContractController {
         payload: request.body,
         err: err,
         handler: 'ContractController.See',
+      })
+    }
+  }
+
+  async Store({ request, response }) {
+    const token = request.header("authorization");
+
+    const formData = request.file("formData", { types: ["image", "pdf"], size: "10mb" });
+    const contract = JSON.parse(request.input(('contract')))
+    const multi = request.input('multiple')
+    const hasFiles = request.input('hasFiles')
+
+    try {
+      const verified = seeToken(token);
+
+      // encontrar o proximo ConId do cliente
+      const LastConId = await Database.raw(
+        `select MAX(ConId) as MaxConId from dbo.Contrato where GrpVen = ? and CNPJ = ?`,
+        [verified.grpven, String(contract.CNPJ).trim()]
+      )
+
+      const dadosCliente = await Database
+        .select('*')
+        .from('dbo.Cliente')
+        .where({
+          GrpVen: verified.grpven,
+          CNPJ: String(contract.CNPJ).trim()
+        })
+
+      let nextConId = LastConId.length > 0 ? LastConId[0].MaxConId + 1 : 1
+      // criar o contrato
+      await Database
+        .insert({
+          GrpVen: verified.grpven,
+          CNPJ: String(contract.CNPJ).trim(),
+          ConId: nextConId,
+          cnpjn: Number(contract.CNPJ),
+          Dt_Inicio: contract.Dt_Inicio,
+          Dt_Fim: contract.Dt_Fim,
+          ConMesBase: null,
+          Nome_Fantasia: dadosCliente[0].Nome_Fantasia,
+          Contato_Empresa: contract.Contato_Empresa,
+          Email: contract.Email,
+          Contato_Empresa_2: contract.Contato_Empresa_2,
+          Email_2: contract.Email_2,
+          Fone_2: contract.Fone_2,
+          Contato2: contract.Contato2,
+          Obs_Específica_Cliente: null,
+          CLIENTE: null,
+          CNPJss: dadosCliente[0].CNPJss,
+          QtdEq: null,
+          ConVlrTaxa: null,
+          ConVlrDesconto: null,
+          ConQtMeses: null,
+          ConAssinado: null,
+          ConDtTreino: null,
+          ConPDF: null,
+          ConStatus: 'A'
+        })
+        .into('dbo.Contrato')
+
+
+      if (hasFiles === 'S') {
+        const path = Helpers.publicPath(`/CONTRATOS/${verified.user_code}/${String(contract.CNPJ).trim()}/${nextConId}`)
+        let newFileName = ''
+        const fn = contract.documents
+        let file = null
+
+        if (multi === 'N') {
+          newFileName = fn[0];
+
+          await formData.move(path, {
+            name: newFileName,
+            overwrite: true,
+          });
+
+          if (!formData.moved()) {
+            return formData.errors();
+          }
+
+          file = await Drive.get(`${path}/${newFileName}`);
+
+          await Drive.put(
+            `\\\\192.168.1.250\\dados\\Franquia\\SLWEB\\CONTRATOS\\${verified.user_code}\\${String(contract.CNPJ).trim()}\\${nextConId}\\${newFileName}`,
+            file
+          );
+        } else {
+          await formData.moveAll(path, (file, i) => {
+            newFileName = fn[i];
+
+            return {
+              name: newFileName,
+              overwrite: true,
+            };
+          });
+
+          if (!formData.movedAll()) {
+            return formData.errors();
+          }
+
+          fn.forEach(async (name) => {
+            file = await Drive.get(`${path}/${name}`);
+
+            await Drive.put(
+              `\\\\192.168.1.250\\dados\\Franquia\\SLWEB\\CONTRATOS\\${verified.user_code}\\${String(contract.CNPJ).trim()}\\${nextConId}\\${name}`,
+              file
+            );
+          });
+        }
+      }
+
+      response.status(200).send();
+    } catch (err) {
+      response.status(400).send();
+      logger.error({
+        token: token,
+        params: null,
+        payload: request.body,
+        err: err,
+        handler: 'ContractController.Store',
       })
     }
   }
@@ -288,14 +420,14 @@ class ContractController {
           return formData.errors();
         }
 
-        fn.forEach(async (name) => {
-          file = await Drive.get(`${path}/${name}`);
+        for (let i = 0; i < fn.length; i++) {
+          file = await Drive.get(`${path}/${fn[i]}`);
 
           await Drive.put(
-            `\\\\192.168.1.250\\dados\\Franquia\\SLWEB\\CONTRATOS\\${verified.user_code}\\${CNPJ}\\${ConId}\\${name}`,
+            `\\\\192.168.1.250\\dados\\Franquia\\SLWEB\\CONTRATOS\\${verified.user_code}\\${CNPJ}\\${ConId}\\${fn[i]}`,
             file
           );
-        });
+        }
       }
 
       response.status(200).send();
