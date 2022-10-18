@@ -13,7 +13,6 @@ class TokenValidate {
    */
   async handle({ request, response }, next) {
     const token = request.header('authorization')
-    
     try {
       if (!token) {
         throw new Error('token não fornecido')

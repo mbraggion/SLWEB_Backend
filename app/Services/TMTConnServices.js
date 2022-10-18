@@ -138,20 +138,20 @@ exports.StoreClient = async (token, cliente, cidade, empresaID, segmento) => {
   const con = AuthConnection(token);
   
   const DTO = {
-    EntidadeId: empresaID,
-    Codigo: cliente.A1_COD,
-    Tipo: cliente.TPessoa,
-    Cnpj: cliente.CNPJ[0],
-    Nome: cliente.Razão_Social,
-    NomeFantasia: cliente.Nome_Fantasia,
-    SegmentoId: segmento,
-    CidadeId: cidade.Id,
-    Logradouro: cliente.PdvLogradouroPV,
+    EntidadeId: Number(empresaID),
+    Codigo: String(cliente.A1_COD).trim(),
+    Tipo: String(cliente.TPessoa).trim(),
+    Cnpj: String(cliente.CNPJ[0]).trim(),
+    Nome: String(cliente.Razão_Social).trim(),
+    NomeFantasia: String(cliente.Nome_Fantasia).trim(),
+    SegmentoId: Number(segmento.Id),
+    CidadeId: Number(cidade.Id),
+    Logradouro: String(cliente.PdvLogradouroPV).trim(),
     Numero: cliente.PdvNumeroPV,
-    Complemento: cliente.PdvComplementoPV,
-    Bairro: cliente.PdvBairroPV,
-    CEP: cliente.PdvCEP,
-    Celular: `${cliente.DDD}${cliente.Fone}`,
+    Complemento: String(cliente.PdvComplementoPV).trim(),
+    Bairro: String(cliente.PdvBairroPV).trim(),
+    CEP: String(cliente.PdvCEP).trim(),
+    Celular: `${cliente.DDD}${cliente.Fone}`.trim(),
     Telefone: '',
     Email: cliente.Email,
     NomeContato: cliente.Contato_Empresa
@@ -198,6 +198,7 @@ exports.StoreInstalacao = async (token, empresaID, maquinaID, clienteID) => {
 
 exports.UpdateClient = async (token, ID, cliente, cidade, empresaID, segmento) => {
   const con = AuthConnection(token);
+  
   const DTO = {
     Id: ID,
     EntidadeId: empresaID,
@@ -206,7 +207,7 @@ exports.UpdateClient = async (token, ID, cliente, cidade, empresaID, segmento) =
     Cnpj: cliente.CNPJ[0],
     Nome: cliente.Razão_Social,
     NomeFantasia: cliente.Nome_Fantasia,
-    SegmentoId: segmento,
+    SegmentoId: segmento.Id,
     CidadeId: cidade.Id,
     Logradouro: cliente.PdvLogradouroPV,
     Numero: cliente.PdvNumeroPV,

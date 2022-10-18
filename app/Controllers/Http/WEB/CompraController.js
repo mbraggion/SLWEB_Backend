@@ -35,6 +35,8 @@ class CompraController {
     try {
       seeToken(token);
 
+      await Database.raw('execute dbo.sp_AcertaPedCompra')
+
       const Produtos = await Database.raw(queryProdutos);
       const Desconto = await Database
         .select('ParamVlr')
@@ -69,37 +71,59 @@ class CompraController {
     try {
       const verified = seeToken(token);
 
+      // pego umas info geral sobre compra
       const InfoCompras = await Database.raw(queryGigante1, [verified.grpven]);
 
+      // verifico se o cara ta bloqueado
       const InfoBloqueado = await Database.raw(queryBloqueado, [
         verified.grpven,
       ]);
 
+      // busco as duplicatas em aberto
       const DuplicatasAberto = await Database.raw(
         queryDuplicatas,
         verified.grpven
       );
 
-      const PedidosNaoFaturados = await Database.raw("SELECT IIF(Sum(dbo.PedidosVenda.PrecoTotal) is null, 0, Sum(dbo.PedidosVenda.PrecoTotal)) AS Total FROM dbo.PedidosVenda INNER JOIN dbo.PedidosCompraCab ON (     dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial ) AND (     dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId ) WHERE (     ((dbo.PedidosCompraCab.NroNF) Is Null)     AND ((dbo.PedidosCompraCab.GrpVen) = ?)     AND (    (dbo.PedidosVenda.STATUS) <> 'C'    Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null     ) )", [verified.grpven]);
+      // busco pedidos feitos ainda não faturados
+      const PedidosNaoFaturados = await Database.raw(queryPedidosAFaturar, [verified.grpven]);
 
+      // busco as compras feitas durante o ano
       const ComprasAoAno = await Database.raw(queryComprasAno, verified.grpven);
 
-      const Reputacao = await Database.select('Confiavel').from('dbo.FilialEntidadeGrVenda').where({
+      // verifico se o cara já tentou fazer algum scam com a empresa
+      const Info = await Database.select('Confiavel', 'VlrMinCompra', 'UF').from('dbo.FilialEntidadeGrVenda').where({
         A1_GRPVEN: verified.grpven
       })
 
+      // crio um obj bonitinho combinando alguns dados
       const Geral = {
         ...Object.assign(InfoCompras[0], InfoBloqueado[0]),
         Compras: InfoCompras[0].Compras + PedidosNaoFaturados[0].Total,
         LimiteAtual: InfoCompras[0].LimiteAtual - PedidosNaoFaturados[0].Total,
       };
 
+      let nCompensa = []
+
+      // se a reputacao do cara nao for legal, pego uma lista do que ele tem em aberto e nao vai poder compensar
+      if (!Info[0].Confiavel) {
+        nCompensa = await Database
+          .select('E1Prefixo as E1_PREFIXO', 'E1Num as E1_NUM', 'E1Parcela as E1_PARCELA')
+          .from('dbo.SE1_exc')
+          .where({
+            GrpVen: verified.grpven
+          })
+      }
+
       response.status(200).send({
         Geral: Geral,
         Duplicatas: DuplicatasAberto,
         ComprasAno: ComprasAoAno,
         AFaturar: PedidosNaoFaturados,
-        Confiavel: Reputacao[0].Confiavel
+        Confiavel: Info[0].Confiavel,
+        NaoCompensavel: nCompensa,
+        VlrMinCompra: Info[0].VlrMinCompra,
+        Retira: Info[0].UF === 'SP' ? true : false 
       });
     } catch (err) {
       response.status(400).send();
@@ -275,7 +299,7 @@ class CompraController {
 
       //verifico se o pedido tem pelo menos 1 item
       if (Items.length === 0) {
-        throw new Error();
+        throw new Error('Nenhum item registrado para compra');
       }
 
       //testar se o cara tem limite
@@ -289,24 +313,27 @@ class CompraController {
       );
 
       let TotalDoPedido = 0;
+
       Items.map(
         (item) =>
         (TotalDoPedido +=
           Number(item.QCompra) * (Number(item.QtMin) * (Number(item.VlrUn) * ((AVista ? 0.95 : 1) + (Desconto && item.ProdRoy === 1 ? Desconto : 1) - 1))))
       );
 
+      // testo o limite do cara - a faturar - total do pedido
       if (
         limite[0].LimiteAtual - PedidosNaoFaturados[0].Total - TotalDoPedido <=
         0
       ) {
-        throw new Error();
+        throw new Error('Limite insuficiente');
       }
 
 
       //testo se o cara ta bloqueado
       const bloqueado = await Database.raw(queryBloqueado, [verified.grpven]);
-      if (bloqueado[0] && bloqueado[0].Bloqueado === "S") {
-        throw new Error();
+
+      if (bloqueado.length === 0 || bloqueado[0].Bloqueado === "S") {
+        throw new Error('Franqueado bloqueado');
       }
 
       //busco dados do franqueado
@@ -369,9 +396,9 @@ class CompraController {
           }).into("dbo.PedidosVenda")
       );
 
-      response.status(200).send(TotalDoPedido);
+      response.status(200).send();
     } catch (err) {
-      response.status(400).send();
+      response.status(400).send(err.message);
       logger.error({
         token: token,
         params: null,
@@ -446,8 +473,6 @@ class CompraController {
 
       const path = `\\\\192.168.1.248\\totvs12\\Producao\\protheus_data\\DANFE_FRANQUIA\\0201\\boleto_${PedidoId}${Parcela === 'UNICA' ? '' : `_${Parcela}`}.pdf`
 
-      console.log(path)
-
       const Imagem = await Drive.exists(path) ? await Drive.get(path) : { message: 'File not found' };
 
       response.status(200).send(Imagem);
@@ -506,8 +531,6 @@ class CompraController {
     let file = null
 
     try {
-      
-      
       if (multiples === 'N') {
 
         newFileName = `comprovante-1-${new Date().getTime()}.${formData.subtype}`;
@@ -711,7 +734,7 @@ class CompraController {
         return
       }
 
-      const rotas =  await Database.select('*').from('dbo.SLWEB_Rotas')
+      const rotas = await Database.select('*').from('dbo.SLWEB_Rotas')
 
       const matchIndexes = matchCEPWithRanges(CEPTarget, rotas.map(rota => rota.range_CEP))
 
@@ -901,3 +924,5 @@ const queryPedidosAtendidosDetPorDocNum =
 
 const queryLimiteDisponivel =
   "SELECT IIf( [Compras] > 0, [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) - [Compras], [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, IIF( dbo.FilialEntidadeGrVenda.LimExtraCredito is null, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) ) ) AS LimiteAtual FROM dbo.FilialEntidadeGrVenda LEFT JOIN ( SELECT SE1_GrpVen.GrpVen, Sum(SE1_GrpVen.E1_SALDO) AS Compras FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) AND (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc WHERE (((SE1_Class.E1Desc = 'Compra' ))) GROUP BY SE1_GrpVen.GrpVen ) as SE1_ComprasNVencidas ON dbo.FilialEntidadeGrVenda.A1_GRPVEN = SE1_ComprasNVencidas.GrpVen WHERE ( ((dbo.FilialEntidadeGrVenda.Inatv) Is Null) and dbo.FilialEntidadeGrVenda.A1_GRPVEN = ? )";
+
+const queryPedidosAFaturar = "SELECT IIF(Sum(dbo.PedidosVenda.PrecoTotal) is null, 0, Sum(dbo.PedidosVenda.PrecoTotal)) AS Total FROM dbo.PedidosVenda INNER JOIN dbo.PedidosCompraCab ON (     dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial ) AND (     dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId ) WHERE (     ((dbo.PedidosCompraCab.NroNF) Is Null)     AND ((dbo.PedidosCompraCab.GrpVen) = ?)     AND (    (dbo.PedidosVenda.STATUS) <> 'C'    Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null     ) )"

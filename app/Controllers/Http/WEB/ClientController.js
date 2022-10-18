@@ -137,7 +137,22 @@ class ClientController {
         ClienteStatus: 'A'
       }
 
-      await Database.insert(novoCliente).into("dbo.Cliente");
+      await Database
+        .insert(novoCliente)
+        .into("dbo.Cliente");
+
+      const maxId = await Database.raw("select MAX(DepId) as MaxId from dbo.Deposito where GrpVen = ?", [verified.grpven])
+
+      await Database
+        .insert({
+          GrpVen: verified.grpven,
+          DepId: maxId.length > 0 ? Number(maxId[0].MaxId) + 1 : 1,
+          DepNome: String(cliente.Nome_Fantasia).trim(),
+          DepTipo: null,
+          Inativo: null,
+          DepDL: maxId.length > 0 ? Number(maxId[0].MaxId) + 1 : 1
+        })
+        .into('dbo.Deposito')
 
       response.status(201).send({ ClienteCadastrado: novoCliente });
     } catch (err) {

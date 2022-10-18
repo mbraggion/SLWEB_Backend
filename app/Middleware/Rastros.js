@@ -21,7 +21,8 @@ class Rastros {
     try {
       if (
         request.method() !== 'OPTIONS' &&
-        request.headers()['user-agent'] !== 'ELB-HealthChecker/2.0'
+        request.headers()['user-agent'] !== 'ELB-HealthChecker/2.0' &&
+        request.url() !== '/navegacao/'
       ) {
         await Database.insert({
           timestamp: moment().subtract(3, 'hours').toDate(),

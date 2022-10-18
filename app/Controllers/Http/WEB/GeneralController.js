@@ -1,8 +1,6 @@
 'use strict'
 
 const Database = use("Database");
-const Mail = use("Mail");
-const Env = use("Env");
 const { seeToken } = require("../../../Services/jwtServices");
 const moment = require("moment");
 const logger = require("../../../../dump/index")
@@ -40,7 +38,9 @@ class GeneralController {
       const verified = seeToken(token);
 
       const news = await Database.raw("select NS.*, NSC.DtConfirmacao from dbo.NewsSLWEB as NS left join dbo.NewsSLWEBConfirmacao as NSC on NS.NewsId = NSC.NewsId and NSC.GrpVen = ? where NS.BannerStatus = 'A' order by NS.NewsId DESC", [verified.grpven])
-
+      Database.raw('execute dbo.sp_SLRaspyApp')
+      Database.raw('execute dbo.sp_SLTELLeituraApp')
+      
       response.status(200).send({
         News: news
       })
@@ -157,15 +157,23 @@ class GeneralController {
     try {
       const verified = seeToken(token);
 
-      const DeveConfirmacao = await Database
+      const DeveConfirmacaoDeLocalizacao = await Database
         .select('Equip')
         .from('dbo.FilialEntidadeGrVenda')
         .where({
           M0_CODFIL: verified.user_code
         })
 
+      const DeveConfirmacaoDeRecebimento = await Database
+        .select('OSCId')
+        .from('dbo.OSCtrl')
+        .where('OSCDtPretendida', '<', new Date())
+        .andWhere('OSCStatus', '=', 'Ativo')
+        .andWhere('GrpVen', '=', verified.grpven)
+
       response.status(200).send({
-        Equip: DeveConfirmacao[0] ? DeveConfirmacao[0].Equip === 'S' : false
+        Equip: DeveConfirmacaoDeLocalizacao[0] ? DeveConfirmacaoDeLocalizacao[0].Equip === 'S' : false,
+        Deliver: DeveConfirmacaoDeRecebimento.length > 0 ? true : false
       })
     } catch (err) {
       response.status(400).send()

@@ -44,10 +44,10 @@ class Sl2TelController {
         Database.raw("select * from dbo.PontoVenda as P inner join dbo.Cliente as C on P.CNPJ = C.CNPJ  where P.EquiCod = ? and P.PdvStatus = ?", [EquiCod, "A"]),
         ListClients(tokenTMT.data.access_token),
       ]);
-      
+
       // testo pra ver se o cliente já existe na tmt
       let IdGeral = returnClientID(clientes, PDV[0].CNPJ[0])
-      
+
       //trago todas as cidades e segmentos do tmt para usar seus IDs
       let [cidades, segmentos] = await Promise.all([
         ListCidades(tokenTMT.data.access_token),
@@ -65,17 +65,29 @@ class Sl2TelController {
 
       //se o cliente não existir no tmt, crio um novo, sejá existir atualizo
       if (IdGeral === null) {
-        await StoreClient(tokenTMT.data.access_token, PDV[0], cidadeCorreta ? cidadeCorreta : 1, tokenTMT.data.empresaId, typeof segmentoCorreto != 'undefined' && segmentoCorreto.length > 0 ? segmentoCorreto[0].Id : 1)
+        await StoreClient(
+          tokenTMT.data.access_token, PDV[0],
+          cidadeCorreta ? cidadeCorreta : null,
+          tokenTMT.data.empresaId,
+          segmentoCorreto ? segmentoCorreto : null
+        )
         /* preciso carregar todos os cliente do tmt novamente 
         e filtrar a lista mais uma vez para encontrar o ID 
         do cliente recem criado */
         clientes = await ListClients(tokenTMT.data.access_token)
         IdGeral = returnClientID(clientes, PDV[0].CNPJ[0])
-        
+
       } else {
-        await UpdateClient(tokenTMT.data.access_token, IdGeral, PDV[0], cidadeCorreta, tokenTMT.data.empresaId, typeof segmentoCorreto != 'undefined' && segmentoCorreto.length > 0 ? segmentoCorreto[0].Id : 1)
+        await UpdateClient(
+          tokenTMT.data.access_token,
+          IdGeral,
+          PDV[0],
+          cidadeCorreta ? cidadeCorreta : null,
+          tokenTMT.data.empresaId,
+          segmentoCorreto ? segmentoCorreto : null
+        )
       }
-      
+
       console.log('3')
 
       //trago todas as máquinas e instalacoes de máquinas da filial no tmt
@@ -95,13 +107,13 @@ class Sl2TelController {
       /*para cada item do array de instalacoes com encerramento 'null' vou 
       verificar se é a instalação do mesmo cliente, se não for, encerro-a, se não,
       ignoro e altero o valor da variavel que indica instalacao já existente */
-      instalacoesAtivo.forEach(async (instalacao) => {
-        if (instalacao.ClienteId !== IdGeral) {
-          await FecharInstalacoes(tokenTMT.data.access_token, instalacao)
+      for (let i = 0; i < instalacoesAtivo; i++) {
+        if (instalacoesAtivo[i].ClienteId !== IdGeral) {
+          await FecharInstalacoes(tokenTMT.data.access_token, instalacoesAtivo[i])
         } else {
           alreadyLinkedToClient = true
         }
-      })
+      }
 
       console.log('4')
 

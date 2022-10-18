@@ -400,13 +400,13 @@ class EquipRequestController {
 
     try {
       const verified = seeToken(token);
-
+      
       cab = await Database.raw(CabeçalhoDaOS, [OSID])
       contenedores = await Database.raw(ContenedoresDaOS, [OSID])
       det = await Database.raw(DetalhesDaOS, [OSID])
       Dados = await Database.select("GrupoVenda", "M0_CGC", 'Email', 'M0_CODFIL')
-        .from("dbo.FilialEntidadeGrVenda")
-        .where({ A1_GRPVEN: cab[0].GrpVen });
+      .from("dbo.FilialEntidadeGrVenda")
+      .where({ A1_GRPVEN: cab[0].GrpVen });
       PathWithName = `${path}/${cab[0].OSCPDF}`
 
       const Solicitacao = {
@@ -779,6 +779,35 @@ class EquipRequestController {
     }
   }
 
+  async TecInfEqData({ request, response }) {
+    const token = request.header("authorization");
+    const { EqCod, RaspyCod, TelemetriaCod, OSID } = request.only(["EqCod", "TelemetriaCod", "RaspyCod", "OSID"]);
+
+    try {
+      await Database.table("dbo.OSCtrl")
+        .where({
+          OSCId: OSID,
+        })
+        .update({
+          EquipCod: String(EqCod).substring(0, 8),
+          SLRaspyNum: String(RaspyCod).substring(0, 50),
+          TelemetriaNum: String(TelemetriaCod).substring(0, 50),
+        });
+
+      response.status(200).send()
+    } catch (err) {
+      response.status(400).send()
+      logger.error({
+        token: token,
+        params: null,
+        payload: request.body,
+        err: err,
+        handler: 'EquipRequestController.TecInfEqData',
+      })
+    }
+
+  }
+
   async SistemOptions({ request, response }) {
     const token = request.header("authorization");
     const { action, OSID } = request.only(["action", "OSID"]);
@@ -911,7 +940,7 @@ class EquipRequestController {
 
 module.exports = EquipRequestController;
 
-const CabeçalhoDaOS = "select OC.GrpVen, OS.MaqId as MaquinaId, OSC.MaqModelo as Maquina, OC.OSCDtSolicita as DataSolicitada, OS.SisPag as Pagamento, OS.ValidadorVal as Validador, OS.ValidadorCond as TipoValidador, OS.InibCopos as InibirCopos, OS.MaqCorp as Corporativa, OS.Gabinete as Gabinete, OS.THidrico as Abastecimento, OS.TComunic as Chip, OS.Antena as AntExt, C.Nome_Fantasia as Cliente_Destino, OC.OSCnpjDest as CNPJ_Destino, OC.OSCDestino as Endereço_Entrega, OC.OSCDtPretendida as Data_Entrega_Desejada, OC.OSCcontato as Contato, OC.OSCEmail as Email_Acompanhamento, OC.OSCTelCont as Telefone_Contato, OS.OSObs as Observacao, OC.OSCPDF from dbo.OSCtrl as OC inner join dbo.OSCtrlSpec as OS on OC.OSCId = OS.OSCId left join dbo.OSConfigMaq as OSC on OS.MaqId = OSC.MaqModId left join dbo.Cliente as C on C.CNPJss = OC.OSCnpjDest and C.GrpVen = OC.GrpVen where OC.OSCId = ?"
+const CabeçalhoDaOS = "select OC.GrpVen, OS.MaqId as MaquinaId, OSC.MaqModelo as Maquina, OC.OSCDtSolicita as DataSolicitada, OS.SisPag as Pagamento, OS.ValidadorVal as Validador, OS.ValidadorCond as TipoValidador, OS.InibCopos as InibirCopos, OS.MaqCorp as Corporativa, OS.Gabinete as Gabinete, OS.THidrico as Abastecimento, OS.TComunic as Chip, OS.Antena as AntExt, C.Nome_Fantasia as Cliente_Destino, OC.OSCnpjDest as CNPJ_Destino, OC.OSCDestino as Endereço_Entrega, OC.OSCDtPretendida as Data_Entrega_Desejada, OC.OSCcontato as Contato, OC.OSCEmail as Email_Acompanhamento, OC.OSCTelCont as Telefone_Contato, OS.OSObs as Observacao, OC.OSCPDF, OC.EquipCod, OC.SLRaspyNum, OC.TelemetriaNum from dbo.OSCtrl as OC inner join dbo.OSCtrlSpec as OS on OC.OSCId = OS.OSCId left join dbo.OSConfigMaq as OSC on OS.MaqId = OSC.MaqModId left join dbo.Cliente as C on C.CNPJss = OC.OSCnpjDest and C.GrpVen = OC.GrpVen where OC.OSCId = ?"
 
 const ContenedoresDaOS = "select distinct IIF(OD.TProduto = 'Pronto', OB.ContPronto, OB.ContMist) as Contenedor from dbo.OSCtrlDet as OD inner join dbo.OSBebidas as OB on OD.BebidaId = OB.Cod where OD.OSCId = ?"
 

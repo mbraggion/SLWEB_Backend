@@ -98,6 +98,7 @@ Route.post("/equip/requests", "WEB/EquipRequestController.Store").middleware(['j
 Route.get("/equip/requests/all", "WEB/EquipRequestController.All").middleware(['jwt', 'vld:1,1']); //retorna todas as requisições
 Route.put("/equip/requests/check", "WEB/EquipRequestController.ViewCheck").middleware(['jwt', 'vld:1,1']); //atualiza a data de visualização
 Route.put("/equip/requests/validate", "WEB/EquipRequestController.ValidateOS").middleware(['jwt', 'vld:0,1']); //atualiza a configuração da maquina
+Route.put("/equip/requests/inform", "WEB/EquipRequestController.TecInfEqData").middleware(['jwt', 'vld:1,0']); //atualiza a configuração da maquina
 Route.put("/equip/requests/admin", "WEB/EquipRequestController.SistemOptions").middleware(['jwt', 'vld:4,0']); //adm gerencia a os
 
 //Franquia
@@ -105,13 +106,14 @@ Route.get("/administrar/franquia", "ADMIN/FranquiasController.Show").middleware(
 Route.post("/administrar/franquia", "ADMIN/FranquiasController.Store").middleware(['jwt', 'vld:1,1']);
 
 //Formulário de futuros franqueados
-Route.get("/form/check/:cod", "ADMIN/FuturoFranqueadoController.FutureCod"); //checa se o número do futuro franqueado existe no DB
-Route.get("/form/all", "ADMIN/FuturoFranqueadoController.Show").middleware(['jwt', 'vld:1,1']); //retorna todos os formulários
 Route.get("/form/original", "ADMIN/FuturoFranqueadoController.RetriveWORDFORM"); //baixa o formulario .doc
-Route.get("/form/pdf/:CodCandidato", "ADMIN/FuturoFranqueadoController.GeneratePDF").middleware(['jwt', 'vld:1,1']); //retorna pdf do formulario
 Route.post("/form/solicitacao", "ADMIN/FuturoFranqueadoController.RequestCod"); //solicita código de acesso
-Route.post("/form/upload/", "ADMIN/FuturoFranqueadoController.FileUpload"); //faz upload de arquivos
-Route.post("/form/:CodCandidato", "ADMIN/FuturoFranqueadoController.FormUpload"); //faz upload do formulario
+Route.get("/form/check/:cod", "ADMIN/FuturoFranqueadoController.FutureCod"); //checa se o número do futuro franqueado existe no DB
+Route.post("/form/upload/form/:CodCandidato", "ADMIN/FuturoFranqueadoController.UpdateForm"); //faz upload do formulario
+Route.post("/form/upload/files", "ADMIN/FuturoFranqueadoController.FileUpload"); //faz upload de arquivos
+Route.get("/form/all", "ADMIN/FuturoFranqueadoController.Show").middleware(['jwt', 'vld:1,1']); //retorna todos os formulários
+Route.get("/form/pdf/:CodCandidato", "ADMIN/FuturoFranqueadoController.GeneratePDF").middleware(['jwt', 'vld:1,1']); //retorna pdf do formulario
+Route.get("/form/zip/:CodCandidato", "ADMIN/FuturoFranqueadoController.GenerateZip").middleware(['jwt', 'vld:1,1']); //retorna zip dos arquivos do formulário
 
 //Dashboard
 Route.get("/dashboard/filiais", "WEB/GeneralController.Filiais").middleware(['jwt', 'vld:1,1']); //retorna pdf do formulario
@@ -135,6 +137,21 @@ Route.get("/coletas/novacoleta/:l1id/:l2id/:anxid/:pdvid", "WEB/ConsultaColetasC
 Route.post("/coletas/novacoleta/", "WEB/ConsultaColetasController.GravaColeta").middleware(['jwt', 'vld:0,1']); //grava nova coleta
 Route.delete("/coletas/detalhes/apagar/:EquiCod/:AnxId/:PdvId/:FfmSeq", "WEB/ConsultaColetasController.Delete").middleware(['jwt', 'vld:0,1']); //deleta coleta
 
+//Contratos
+Route.get('/contracts', "WEB/ContractController.Show").middleware(['jwt', 'vld:0,1'])
+Route.post('/contracts', "WEB/ContractController.Store").middleware(['jwt', 'vld:0,1'])
+Route.put('/contracts/:cnpj/:conid', "WEB/ContractController.Inativar").middleware(['jwt', 'vld:0,1'])
+Route.get('/contracts/documents/:cnpj/:conid/:filename', "WEB/ContractController.Download").middleware(['jwt', 'vld:0,1'])
+Route.get('/contracts/info/:tipo/:cnpj/:conid', "WEB/ContractController.See").middleware(['jwt', 'vld:0,1'])
+Route.put('/contracts/info/:tipo/:cnpj/:conid', "WEB/ContractController.Update").middleware(['jwt', 'vld:0,1'])
+Route.post('/contracts/upload', "WEB/ContractController.Upload").middleware(['jwt', 'vld:0,1'])
+
+//Deposits
+Route.get('/deposits', "WEB/DepositsController.Show").middleware(['jwt', 'vld:0,1'])
+
+//Inventario
+Route.get('/inventario/:ref', "WEB/InventoryController.See").middleware(['jwt', 'vld:0,1'])
+
 //Pontos de Venda
 Route.get("/pontosdevenda", "WEB/PontosDeVendaController.Show").middleware(['jwt', 'vld:0,1']); //retorna todos os pontos de venda do franqueado
 Route.get("/pontosdevenda/info/:pdvid/:anxid/:type", "WEB/PontosDeVendaController.See").middleware(['jwt', 'vld:0,1']); //retorna detalhes do ponto de venda
@@ -142,6 +159,7 @@ Route.put("/pontosdevenda/inativar", "WEB/PontosDeVendaController.InativPDV").mi
 Route.put("/pontosdevenda/atualizar/:pdvid/:anxid/:type", "WEB/PontosDeVendaController.Update").middleware(['jwt', 'vld:0,1']); //atualiza dados do pdv
 
 //Pedidos de compra
+Route.get('/pedidos/compra/integracao', 'ADMIN/PedidosDeCompraController.Integrar').middleware(['jwt', 'vld:1,1']);
 Route.get('/pedidos/compra/:diff', 'ADMIN/PedidosDeCompraController.Show').middleware(['jwt', 'vld:1,1']);
 Route.put('/pedidos/compra/', 'ADMIN/PedidosDeCompraController.Update').middleware(['jwt', 'vld:1,1']);
 
@@ -163,8 +181,10 @@ Route.put('/files/permissions/', 'WEB/CompartilhamentoController.UpdateIndexedFo
 Route.put('/files/rename/', 'WEB/CompartilhamentoController.Rename').middleware(['jwt', 'vld:1,1']);
 Route.put('/files/move/', 'WEB/CompartilhamentoController.Move').middleware(['jwt', 'vld:1,1']);
 
+// Referencia
+Route.get('/referencia', 'WEB/ReferenceController.Show').middleware(['jwt', 'vld:0,1']);
+
 //DRE
-Route.get('/dre/referencia', 'WEB/DreController.Show').middleware(['jwt', 'vld:0,1']);
 Route.get('/dre/:ano/:mes', 'WEB/DreController.See').middleware(['jwt', 'vld:0,1']);
 Route.put('/dre', 'WEB/DreController.UpdateDRE').middleware(['jwt', 'vld:0,1']);
 Route.put('/dov', 'WEB/DreController.UpdateDOV').middleware(['jwt', 'vld:0,1']);

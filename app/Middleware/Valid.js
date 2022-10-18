@@ -26,11 +26,10 @@ class Valid {
         "select AccessLevel from dbo.TipoOper as T inner join dbo.Operador as O on O.TopeCod = T.TopeCod where M0_CODFIL = ?",
         [verified.admin_code ? verified.admin_code : verified.user_code]
       )
-
-
+      
       if (
-        (ScaleLevel && AccessLevelRequired <= AccessLevel[0].AccessLevel) ||
-        (!ScaleLevel && AccessLevelRequired === AccessLevel[0].AccessLevel)
+        (ScaleLevel && Number(AccessLevelRequired) <= Number(AccessLevel[0].AccessLevel)) ||
+        (!ScaleLevel && Number(AccessLevelRequired) === Number(AccessLevel[0].AccessLevel))
       ) {
         await next()
       } else {
