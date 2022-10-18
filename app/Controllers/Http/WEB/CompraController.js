@@ -123,7 +123,7 @@ class CompraController {
         Confiavel: Info[0].Confiavel,
         NaoCompensavel: nCompensa,
         VlrMinCompra: Info[0].VlrMinCompra,
-        Retira: Info[0].UF === 'UF' ? true : false 
+        Retira: Info[0].UF === 'SP' ? true : false 
       });
     } catch (err) {
       response.status(400).send();
