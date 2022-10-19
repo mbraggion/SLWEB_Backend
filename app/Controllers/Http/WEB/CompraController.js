@@ -667,7 +667,7 @@ class CompraController {
         compraCab = await Database.raw("select C.Nome_Fantasia, PC.PedidoId as PvcID, C.CNPJss, PC.DataCriacao, C.TPessoa from dbo.PedidosCompraCab as PC inner join dbo.Cliente as C on PC.GrpVen = C.GrpVen and C.A1_SATIV1 = '000113' and A1Tipo = 'R' where PC.C5NUM = ? and PC.GrpVen = ?", [pedidoid, verified.grpven])
 
         if (!compraCab[0]) {
-          compraCab = await Database.raw("SELECT distinct C.Nome_Fantasia, S.Pedido as PvcID, C.CNPJss, S.DtEmissao as DataCriacao, C.TPessoa FROM dbo.SDBase as S inner join dbo.Cliente as C on S.SA1_GRPVEN = C.GrpVen and C.A1_SATIV1 = '000113' and C.A1Tipo = 'R' WHERE S.Pedido = ? and S.GRPVEN = ? order by D_ITEM ASC", [pedidoid, verified.grpven])
+          compraCab = await Database.raw("SELECT distinct C.Nome_Fantasia, S.Pedido as PvcID, C.CNPJss, S.DtEmissao as DataCriacao, C.TPessoa FROM dbo.SDBase as S inner join dbo.Cliente as C on S.SA1_GRPVEN = C.GrpVen and C.A1_SATIV1 = '000113' and C.A1Tipo = 'R' WHERE S.Pedido = ? and S.GRPVEN = ? order by S.Pedido ASC", [pedidoid, verified.grpven])
         }
 
         compraDet = await Database.raw("select S.D_COD as ProdId, P.Produto, S.D_QUANT as PvdQtd, S.D_PRCVEN PvdVlrUnit, P.PrCompra, S.D_TOTAL as PvdVlrTotal from dbo.SDBase as S inner join dbo.Produtos as P on S.ProdId = P.ProdId where Pedido = ? and GRPVEN = ?", [pedidoid, verified.grpven])
