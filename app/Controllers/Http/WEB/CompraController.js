@@ -322,7 +322,7 @@ class CompraController {
 
       // testo o limite do cara - a faturar - total do pedido
       if (
-        limite[0].LimiteAtual - PedidosNaoFaturados[0].Total - TotalDoPedido <=
+        limite[0].LimiteAtual - PedidosNaoFaturados[0].Total - TotalDoPedido <
         0
       ) {
         throw new Error('Limite insuficiente');
@@ -472,6 +472,8 @@ class CompraController {
       seeToken(token);
 
       const path = `\\\\192.168.1.248\\totvs12\\Producao\\protheus_data\\DANFE_FRANQUIA\\0201\\boleto_${PedidoId}${Parcela === 'UNICA' ? '' : `_${Parcela}`}.pdf`
+
+      console.log(path)
 
       const Imagem = await Drive.exists(path) ? await Drive.get(path) : { message: 'File not found' };
 

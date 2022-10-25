@@ -150,7 +150,10 @@ Route.post('/contracts/upload', "WEB/ContractController.Upload").middleware(['jw
 Route.get('/deposits', "WEB/DepositsController.Show").middleware(['jwt', 'vld:0,1'])
 
 //Inventario
-Route.get('/inventario/:ref', "WEB/InventoryController.See").middleware(['jwt', 'vld:0,1'])
+Route.get('/inventario/:depid/:ref', "WEB/InventoryController.Show").middleware(['jwt', 'vld:0,1'])
+Route.put('/inventario/:depid/:ref', "WEB/InventoryController.FechaInv").middleware(['jwt', 'vld:0,1'])
+Route.put('/inventario/:depid/:ref/:prodid', "WEB/InventoryController.Ajustar").middleware(['jwt', 'vld:0,1'])
+Route.post('/inventario/:depid/:ref/', "WEB/InventoryController.Store").middleware(['jwt', 'vld:0,1'])
 
 //Pontos de Venda
 Route.get("/pontosdevenda", "WEB/PontosDeVendaController.Show").middleware(['jwt', 'vld:0,1']); //retorna todos os pontos de venda do franqueado
