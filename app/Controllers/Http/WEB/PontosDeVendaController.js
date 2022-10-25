@@ -111,10 +111,6 @@ class PontosDeVendaController {
       //se for ativar, verificar se já não tem outro PDV com aquele EQ
       const pdvsAtivosComEq = await Database.raw(QUERY_PDVS_ATIVOS_COM_EQCOD, [verified.grpven, AnxId, PdvId])
       const EqPertenceAoFranqueado = await Database.raw(QUERY_EQ_NA_BASE, [Eq, verified.grpven])
-
-      console.log(Eq)
-      console.log(pdvsAtivosComEq)
-      console.log(EqPertenceAoFranqueado)
       
       if (
         (pdvsAtivosComEq[0].MaxPdvsAtivosComEquiCod > 0 && Status === 'A') ||
@@ -139,7 +135,6 @@ class PontosDeVendaController {
       response.status(200).send()
     } catch (err) {
       response.status(400).send()
-      console.log(err.message)
       logger.error({
         token: token,
         params: null,
