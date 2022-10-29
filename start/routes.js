@@ -137,6 +137,10 @@ Route.get("/coletas/novacoleta/:l1id/:l2id/:anxid/:pdvid", "WEB/ConsultaColetasC
 Route.post("/coletas/novacoleta/", "WEB/ConsultaColetasController.GravaColeta").middleware(['jwt', 'vld:0,1']); //grava nova coleta
 Route.delete("/coletas/detalhes/apagar/:EquiCod/:AnxId/:PdvId/:FfmSeq", "WEB/ConsultaColetasController.Delete").middleware(['jwt', 'vld:0,1']); //deleta coleta
 
+//Aponta Consumo
+Route.get("/consumo/leituras/:anxid/:equicod/:ref", "WEB/ApontaConsumoController.Leituras").middleware(['jwt', 'vld:0,1']);
+Route.get("/consumo/:anxid/:pdvid/:letini/:letenc", "WEB/ApontaConsumoController.See").middleware(['jwt', 'vld:0,1']);
+
 //Contratos
 Route.get('/contracts', "WEB/ContractController.Show").middleware(['jwt', 'vld:0,1'])
 Route.post('/contracts', "WEB/ContractController.Store").middleware(['jwt', 'vld:0,1'])
@@ -149,8 +153,11 @@ Route.post('/contracts/upload', "WEB/ContractController.Upload").middleware(['jw
 //Deposits
 Route.get('/deposits', "WEB/DepositsController.Show").middleware(['jwt', 'vld:0,1'])
 
+//Receitas
+Route.get('/receita/:recid', "WEB/RecipesController.See").middleware(['jwt', 'vld:0,1'])
+
 //Inventario
-Route.get('/inventario/:depid/:ref', "WEB/InventoryController.Show").middleware(['jwt', 'vld:0,1'])
+Route.get('/inventario/:depid/:ref/:zerados', "WEB/InventoryController.Show").middleware(['jwt', 'vld:0,1'])
 Route.put('/inventario/:depid/:ref', "WEB/InventoryController.FechaInv").middleware(['jwt', 'vld:0,1'])
 Route.put('/inventario/:depid/:ref/:prodid', "WEB/InventoryController.Ajustar").middleware(['jwt', 'vld:0,1'])
 Route.post('/inventario/:depid/:ref/', "WEB/InventoryController.Store").middleware(['jwt', 'vld:0,1'])
