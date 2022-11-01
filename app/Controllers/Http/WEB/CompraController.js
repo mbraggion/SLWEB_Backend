@@ -357,7 +357,7 @@ class CompraController {
         PedidoId: ProxId,
         STATUS: null,
         Filial: "0201",
-        CpgId: AVista ? '001' : Franqueado[0].CondPag,
+        CpgId: AVista ? '055' : Franqueado[0].CondPag,
         DataCriacao: new Date(moment().subtract(3, "hours").format()),
       }).into("dbo.PedidosCompraCab");
 

@@ -62,15 +62,24 @@ const genColumnDef = (sessaoNome, questoes) => {
 
   aux.push({ text: sessaoNome, style: "subheader" })
 
-  questoes.forEach(q => {
-    let i = q.answer !== null && q.answer !== '' ? {
+  if(questoes.length > 0){
+    questoes.forEach(q => {
+      let i = q.answer !== null && q.answer !== '' ? {
+        width: '50%',
+        margin: [0, 5, 0, 0],
+        text: `${q.slug}: ${q.answerComponentType === 'date' && q.answer !== null ? moment(q.answer).format('L') : q.answer}`
+      } : null
+  
+      aux.push(i)
+    })
+  }else{
+    aux.push({
       width: '50%',
       margin: [0, 5, 0, 0],
-      text: `${q.slug}: ${q.answerComponentType === 'date' && q.answer !== null ? moment(q.answer).format('L') : q.answer}`
-    } : null
-
-    aux.push(i)
-  })
+      text: `AUSENTE`
+    })
+  }
+  
 
   return aux.filter(q => q !== null)
 }

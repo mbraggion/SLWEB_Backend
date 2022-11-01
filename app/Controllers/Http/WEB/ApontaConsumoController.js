@@ -41,7 +41,6 @@ class ApontaConsumoController {
       });
     } catch (err) {
       response.status(400).send();
-      console.log(err.message)
       logger.error({
         token: token,
         params: params,
@@ -59,6 +58,9 @@ class ApontaConsumoController {
     const PdvId = params.pdvid
     const leituraIdInit = params.letini
     const leituraIdEnc = params.letenc
+    const DepId = Number(params.depid)
+    const Ref = params.ref
+    const EquiCod = params.equicod
 
     try {
       const verified = seeToken(token);
@@ -66,9 +68,24 @@ class ApontaConsumoController {
       const produtos = await Database.raw("execute dbo.sp_ApontaConsumo1 @GrpVen = ?, @AnxId = ?, @PdvId = ?, @LeituraId1 = ?, @LeituraId2 = ?", [verified.grpven, AnxId, PdvId, leituraIdInit, leituraIdEnc])
       const consumos = await Database.raw("execute dbo.sp_ApontaConsumo2 @GrpVen = ?, @AnxId = ?, @PdvId = ?, @LeituraId1 = ?, @LeituraId2 = ?", [verified.grpven, AnxId, PdvId, leituraIdInit, leituraIdEnc])
 
+      const consumoGravado = await Database
+        .select('ProdId', 'Produto', 'D_QUANT')
+        .from('dbo.SDBase')
+        .where({
+          GRPVEN: verified.grpven,
+          F_SERIE: 'CON',
+          DEPDEST: DepId,
+          RefDt: Ref,
+          M0_TIPO: 'S',
+          PvTipo: 'C',
+          EquiCod: EquiCod
+        })
+
       response.status(200).send({
         Produtos: produtos,
-        Consumos: consumos
+        Consumos: consumos,
+        consumoGravado: consumoGravado.length > 0,
+        consumoGravadoQtds: consumoGravado
       });
     } catch (err) {
       response.status(400).send();
@@ -84,17 +101,22 @@ class ApontaConsumoController {
 
   async Store({ request, response, params }) {
     const token = request.header("authorization");
-
-    const DepId = params.depid
+    const { Consumo, Zerado, IMEI, EquiCod, ref1, ref2 } = request.only(['Consumo', 'Zerado', 'IMEI', 'EquiCod', 'ref1', 'ref2'])
+    let DepId = params.depid
     const Ref = params.ref
 
     try {
       const verified = seeToken(token);
 
+      // verificar se o pdv tem depid
+      if (DepId === null) {
+        throw new Error('ID do depósito indefinido')
+      }
 
+      DepId = Number(DepId)
+
+      // verificar se o cara não está tentando lançar movimentação no depósito 1
       if (DepId === 1) {
-        // verificar se o cara não está tentando lançar movimentação no depósito 1
-
         throw new Error('Não é possivel fazer apontamento de consumo no depósito 1')
       }
 
@@ -104,24 +126,62 @@ class ApontaConsumoController {
 
       DOC = lastDOC.length > 0 ? Number(lastDOC[0].DOC) + 1 : 1
 
-      
-      /*       
-      DoCmd.RunSQL "UPDATE LeiturasConsumoMatPrima SET DOC = " & v + 1 & ";"
-      
-       DoCmd.RunSQL "delete from LeiturasConsumoMatPrimaPK;"
-      
-       S = "INSERT INTO LeiturasConsumoMatPrimaPK ( D_FILIAL, DOC ) "
-       S = S & "SELECT USER.UserFilial, " & v + 1 & " FROM [USER];"
-       DoCmd.RunSQL S
-      
-       S = "DELETE S.* FROM dbo_SDBase_srv AS S INNER JOIN LeiturasConsumoMatPrimaPK AS C "
-       S = S & "ON (S.M0_TIPO = C.M0_TIPO) AND (S.DOC = C.DOC) AND (S.F_SERIE = C.F_SERIE) AND (S.D_FILIAL = C.D_FILIAL);"
-       DoCmd.RunSQL S
-      
-       DoCmd.OpenQuery "LeiturasConsumoGeraSD" 
-       */
+      let LeiturasConsumoMatPrimaPK = {
+        D_FILIAL: verified.user_code,
+        F_SERIE: 'CON',
+        DOC: DOC,
+        M0_TIPO: 'S',
+        Consumo: null,
+      }
 
-      response.status(400).send();
+      await Database.raw("DELETE FROM dbo.SDBase where (M0_TIPO = ?) AND (DOC = ?) AND (F_SERIE = ?) AND (D_FILIAL = ?)", [LeiturasConsumoMatPrimaPK.M0_TIPO, LeiturasConsumoMatPrimaPK.DOC, LeiturasConsumoMatPrimaPK.F_SERIE, LeiturasConsumoMatPrimaPK.D_FILIAL])
+
+      for (let index in Consumo) {
+        let aGravar = {
+          D_FILIAL: LeiturasConsumoMatPrimaPK.D_FILIAL,
+          F_SERIE: LeiturasConsumoMatPrimaPK.F_SERIE,
+          DOC: LeiturasConsumoMatPrimaPK.DOC,
+          D_DOC: LeiturasConsumoMatPrimaPK.DOC,
+          D_ITEM: Consumo[index].GprdId,
+          M0_TIPO: LeiturasConsumoMatPrimaPK.M0_TIPO,
+          PvTipo: 'C',
+          DEPDEST: DepId,
+          DtEmissao: moment().toDate(),
+          ProdId: Consumo[index].ProdId,
+          Produto: Consumo[index].Produto,
+          D_UM: Consumo[index].GprdUn,
+          D_QUANT: Zerado === 'S' ? Consumo[index].TotalConsumo : Consumo[index].Con,
+          D_EMISSAO: moment().format('DDMMYYYY'),
+          D_TOTAL: 0,
+          D_PRCVEN: 0,
+          GRPVEN: verified.grpven,
+          C5_ZZADEST: DepId,
+          A1_NOME: `Equipamento: ${EquiCod}(consumo de ${moment(ref1).format('DD/MM/YYYY')} a ${moment(ref2).format('DD/MM/YYYY')})`,
+          EquiCod: EquiCod,
+          IMEI: IMEI,
+          RefDt: Ref
+        }
+
+
+        await Database.insert(aGravar).into('dbo.SDBase')
+      }
+
+      const consumoGravado = await Database
+        .select('ProdId', 'Produto', 'D_QUANT')
+        .from('dbo.SDBase')
+        .where({
+          GRPVEN: verified.grpven,
+          F_SERIE: 'CON',
+          DEPDEST: DepId,
+          RefDt: Ref,
+          M0_TIPO: 'S',
+          PvTipo: 'C',
+          EquiCod: EquiCod
+        })
+
+      response.status(200).send({
+        consumoGravadoQtds: consumoGravado
+      });
     } catch (err) {
       response.status(400).send();
       logger.error({
@@ -130,6 +190,47 @@ class ApontaConsumoController {
         payload: request.body,
         err: err,
         handler: 'ApontaConsumoController.Store',
+      })
+    }
+  }
+
+  async Destroy({ request, response, params }) {
+    const token = request.header("authorization");
+    let DepId = params.depid
+    const Ref = params.ref
+    const EquiCod = params.equicod
+
+    try {
+      const verified = seeToken(token);
+
+      // verificar se o pdv tem depid
+      if (DepId === null) {
+        throw new Error('ID do depósito indefinido')
+      }
+
+      DepId = Number(DepId)
+
+      await Database.table("dbo.SDBase")
+        .where({
+          GRPVEN: verified.grpven,
+          F_SERIE: 'CON',
+          M0_TIPO: 'S',
+          PvTipo: 'C',
+          DEPDEST: DepId,
+          EquiCod: EquiCod,
+          RefDt: Ref
+        })
+        .delete()
+
+      response.status(200).send();
+    } catch (err) {
+      response.status(400).send();
+      logger.error({
+        token: token,
+        params: params,
+        payload: request.body,
+        err: err,
+        handler: 'ApontaConsumoController.Destroy',
       })
     }
   }

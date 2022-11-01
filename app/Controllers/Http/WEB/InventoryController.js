@@ -84,9 +84,8 @@ class InventoryController {
           }
         }
 
-
         // atualizo o invDet removendo os items sem saldo e movimentação
-        invDet = invDet.filter(inv => inv.InvQtd !== 0 && inv.Mov.filter(
+        invDet = invDet.filter(inv => inv.InvQtd !== 0 || inv.Mov.filter(
           m => m.A1_NOME !== 'INVENTÁRIO INICIAL' && m.A1_NOME !== 'INVENTÁRIO FINAL'
         ).length > 0)
       }
@@ -157,7 +156,7 @@ class InventoryController {
           InvId: invCab.length > 0 ? invCab[0].InvId : null,
           InvDepId: invCab.length > 0 ? invCab[0].DepId : null,
           InvDtLancamento: invCab.length > 0 ? invCab[0].InvDtLanca : null,
-          InvDetalhes: [...invDet, ...invNotDet],
+          InvDetalhes: invCab[0].InvConcluido !== 'S' ? [...invDet, ...invNotDet] : invDet,
         },
         InvZerado: zerados
       })
