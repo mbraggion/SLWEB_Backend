@@ -35,9 +35,10 @@ class CompraController {
     try {
       seeToken(token);
 
-      await Database.raw('execute dbo.sp_AcertaPedCompra')
+      Database.raw('execute dbo.sp_AcertaPedCompra')
 
       const Produtos = await Database.raw(queryProdutos);
+      
       const Desconto = await Database
         .select('ParamVlr')
         .from('dbo.Parametros')

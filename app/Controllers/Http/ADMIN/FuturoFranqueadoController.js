@@ -76,7 +76,7 @@ class FuturoFranqueadoController {
               Env.get("EMAIL_COMERCIAL_3"),
               Env.get("EMAIL_SUPORTE"),
             ])
-            .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+            .from(Env.get("MAIL_USERNAME"), "SLWEB")
             .subject("Código de acesso ao Formulário");
         }
       );
@@ -238,7 +238,7 @@ class FuturoFranqueadoController {
             message
               .to(String(info[0].FTR_email).slice(0, 250))
               .cc(Env.get("EMAIL_SUPORTE"))
-              .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+              .from(Env.get("MAIL_USERNAME"), "SLWEB")
               .subject("Formulário de Perfil")
           }
         );
@@ -282,7 +282,7 @@ class FuturoFranqueadoController {
               message
                 .to(emailConsultor)
                 .cc(Env.get("EMAIL_SUPORTE"))
-                .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+                .from(Env.get("MAIL_USERNAME"), "SLWEB")
                 .subject("Formulário de Franquia preenchido")
                 .attach(PathWithName, {
                   filename: `Formulário de Perfil_${candidato}.pdf`,

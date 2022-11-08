@@ -142,7 +142,7 @@ Route.delete("/coletas/detalhes/apagar/:EquiCod/:AnxId/:PdvId/:FfmSeq", "WEB/Con
 Route.get("/consumo/leituras/:anxid/:equicod/:ref", "WEB/ApontaConsumoController.Leituras").middleware(['jwt', 'vld:0,1']);
 Route.get("/consumo/:anxid/:pdvid/:depid/:ref/:equicod/:letini/:letenc", "WEB/ApontaConsumoController.See").middleware(['jwt', 'vld:0,1']);
 Route.post("/consumo/gravar/:depid/:ref", "WEB/ApontaConsumoController.Store").middleware(['jwt', 'vld:0,1']);
-Route.delete("/consumo/apagar/:depid/:ref/:equicod", "WEB/ApontaConsumoController.Destroy").middleware(['jwt', 'vld:0,1']);
+Route.delete("/consumo/apagar/:depid/:ref/:equicod/:doc", "WEB/ApontaConsumoController.Destroy").middleware(['jwt', 'vld:0,1']);
 
 //Contratos
 Route.get('/contracts', "WEB/ContractController.Show").middleware(['jwt', 'vld:0,1'])
