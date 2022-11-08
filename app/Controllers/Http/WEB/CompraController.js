@@ -358,7 +358,7 @@ class CompraController {
         PedidoId: ProxId,
         STATUS: null,
         Filial: "0201",
-        CpgId: AVista ? '055' : Franqueado[0].CondPag,
+        CpgId: AVista ? '55' : Franqueado[0].CondPag,
         DataCriacao: new Date(moment().subtract(3, "hours").format()),
       }).into("dbo.PedidosCompraCab");
 
@@ -376,7 +376,7 @@ class CompraController {
             Filial: "0201",
             CodigoTabelaPreco: "462",
             CodigoVendedor: "000026",
-            CodigoCondicaoPagto: AVista ? '001' : Franqueado[0].CondPag,
+            CodigoCondicaoPagto: AVista ? '55' : Franqueado[0].CondPag,
             TipoFrete: "C",
             MsgNotaFiscal: null,
             MsgPadrao: null,
@@ -686,6 +686,7 @@ class CompraController {
 
       response.status(200).send(enviarDaMemóriaSemEsperarSalvarNoFS)
     } catch (err) {
+      console.log(err.message)
       response.status(400).send()
       logger.error({
         token: token,
