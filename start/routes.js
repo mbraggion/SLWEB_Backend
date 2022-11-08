@@ -16,6 +16,7 @@ Route.get("/ativo/qrcode/:ativo", "MODS/SLaplicIntController.ReturnQRCode");
 //AWS
 Route.get("/vpn/files/:type", "MODS/AwsController.Show").middleware(['jwt', 'vld:0,1']);
 Route.get("/vpn/pin", "MODS/AwsController.See").middleware(['jwt', 'vld:0,1']);
+Route.get("/pedidos/compra/sync", "MODS/AwsController.Gato")
 
 //Disparar Emails
 Route.get("/emails/history", "ADMIN/MailerController.Show").middleware(['jwt', 'vld:1,1'])

@@ -91,5 +91,16 @@ module.exports = {
       password: Env.get('SQL_DB_PASSWORD'),
       database: Env.get('SQL_DB_DATABASE')
     }
-  }
+  },
+
+  old_mssql: {
+    client: 'mssql',
+    connection: {
+      host: Env.get('OLD_SQL_DB_HOST'),
+      port: Env.get('OLD_SQL_DB_PORT'),
+      user: Env.get('OLD_SQL_DB_USER'),
+      password: Env.get('OLD_SQL_DB_PASSWORD'),
+      database: Env.get('OLD_SQL_DB_DATABASE')
+    }
+  },
 }
