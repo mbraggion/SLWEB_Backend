@@ -90,7 +90,7 @@ class UserController {
           (message) => {
             message
               .to(checkUser[0].Email)
-              .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+              .from(Env.get("MAIL_USERNAME"), "SLWEB")
               .subject("Recuperação de senha");
           }
         );

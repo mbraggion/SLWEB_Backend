@@ -359,7 +359,7 @@ class EquipRequestController {
               Env.get("EMAIL_COMERCIAL_1"),
               Env.get("EMAIL_COMERCIAL_2"),
             ])
-            .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+            .from(Env.get("MAIL_USERNAME"), "SLWEB")
             .subject("Nova ordem de serviço")
             .attach(PathWithName);
         }
@@ -537,7 +537,7 @@ class EquipRequestController {
                     Env.get("EMAIL_TECNICA_3"),
                     Env.get("EMAIL_2BTECH_ATENDIMENTO"),
                   ])
-                  .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+                  .from(Env.get("MAIL_USERNAME"), "SLWEB")
                   .subject("OS Validada pela Pilão")
                   .attach(Helpers.publicPath(`OS/${dados[0].OSCPDF}`), {
                     filename: dados[0].OSCPDF,
@@ -555,7 +555,7 @@ class EquipRequestController {
               (message) => {
                 message
                   .to(Env.get("EMAIL_SUPORTE"))
-                  .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+                  .from(Env.get("MAIL_USERNAME"), "SLWEB")
                   .subject("OS Rejeitada")
                   .attach(Helpers.publicPath(`OS/${dados[0].OSCPDF}`), {
                     filename: dados[0].OSCPDF,
@@ -600,7 +600,7 @@ class EquipRequestController {
                     Env.get("EMAIL_EXPEDICAO_1"),
                     Env.get("EMAIL_EXPEDICAO_2"),
                   ])
-                  .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+                  .from(Env.get("MAIL_USERNAME"), "SLWEB")
                   .subject("OS Validada pela Técnica")
                   .attach(Helpers.publicPath(`OS/${dados[0].OSCPDF}`), {
                     filename: dados[0].OSCPDF,
@@ -618,7 +618,7 @@ class EquipRequestController {
               (message) => {
                 message
                   .to(Env.get("EMAIL_SUPORTE"))
-                  .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+                  .from(Env.get("MAIL_USERNAME"), "SLWEB")
                   .subject("OS Rejeitada")
                   .attach(Helpers.publicPath(`OS/${dados[0].OSCPDF}`), {
                     filename: dados[0].OSCPDF,
@@ -663,7 +663,7 @@ class EquipRequestController {
                     Env.get("EMAIL_EXPEDICAO_1"),
                     Env.get("EMAIL_EXPEDICAO_2"),
                   ])
-                  .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+                  .from(Env.get("MAIL_USERNAME"), "SLWEB")
                   .subject("OS Validada pela Técnica")
                   .attach(Helpers.publicPath(`OS/${dados[0].OSCPDF}`), {
                     filename: dados[0].OSCPDF,
@@ -681,7 +681,7 @@ class EquipRequestController {
               (message) => {
                 message
                   .to(Env.get("EMAIL_SUPORTE"))
-                  .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+                  .from(Env.get("MAIL_USERNAME"), "SLWEB")
                   .subject("OS Rejeitada")
                   .attach(Helpers.publicPath(`OS/${dados[0].OSCPDF}`), {
                     filename: dados[0].OSCPDF,
@@ -724,7 +724,7 @@ class EquipRequestController {
                   Env.get("EMAIL_COMERCIAL_1"),
                   Env.get("EMAIL_COMERCIAL_2"),
                 ])
-                .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+                .from(Env.get("MAIL_USERNAME"), "SLWEB")
                 .subject("Previsão de entrega da OS")
                 .attach(Helpers.publicPath(`OS/${dados[0].OSCPDF}`), {
                   filename: dados[0].OSCPDF,
@@ -757,7 +757,7 @@ class EquipRequestController {
                   Env.get("EMAIL_COMERCIAL_1"),
                   Env.get("EMAIL_COMERCIAL_2"),
                 ])
-                .from(Env.get("MAIL_USERNAME"), "SLAplic Web")
+                .from(Env.get("MAIL_USERNAME"), "SLWEB")
                 .subject("Cancelamento de OS")
                 .attach(Helpers.publicPath(`OS/${dados[0].OSCPDF}`), {
                   filename: dados[0].OSCPDF,

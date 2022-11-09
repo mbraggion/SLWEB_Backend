@@ -35,9 +35,10 @@ class CompraController {
     try {
       seeToken(token);
 
-      await Database.raw('execute dbo.sp_AcertaPedCompra')
+      Database.raw('execute dbo.sp_AcertaPedCompra')
 
       const Produtos = await Database.raw(queryProdutos);
+      
       const Desconto = await Database
         .select('ParamVlr')
         .from('dbo.Parametros')
@@ -322,7 +323,7 @@ class CompraController {
 
       // testo o limite do cara - a faturar - total do pedido
       if (
-        limite[0].LimiteAtual - PedidosNaoFaturados[0].Total - TotalDoPedido <=
+        limite[0].LimiteAtual - PedidosNaoFaturados[0].Total - TotalDoPedido <
         0
       ) {
         throw new Error('Limite insuficiente');
@@ -357,7 +358,7 @@ class CompraController {
         PedidoId: ProxId,
         STATUS: null,
         Filial: "0201",
-        CpgId: AVista ? '001' : Franqueado[0].CondPag,
+        CpgId: AVista ? '55' : Franqueado[0].CondPag,
         DataCriacao: new Date(moment().subtract(3, "hours").format()),
       }).into("dbo.PedidosCompraCab");
 
@@ -375,7 +376,7 @@ class CompraController {
             Filial: "0201",
             CodigoTabelaPreco: "462",
             CodigoVendedor: "000026",
-            CodigoCondicaoPagto: AVista ? '001' : Franqueado[0].CondPag,
+            CodigoCondicaoPagto: AVista ? '55' : Franqueado[0].CondPag,
             TipoFrete: "C",
             MsgNotaFiscal: null,
             MsgPadrao: null,
@@ -667,7 +668,7 @@ class CompraController {
         compraCab = await Database.raw("select C.Nome_Fantasia, PC.PedidoId as PvcID, C.CNPJss, PC.DataCriacao, C.TPessoa from dbo.PedidosCompraCab as PC inner join dbo.Cliente as C on PC.GrpVen = C.GrpVen and C.A1_SATIV1 = '000113' and A1Tipo = 'R' where PC.C5NUM = ? and PC.GrpVen = ?", [pedidoid, verified.grpven])
 
         if (!compraCab[0]) {
-          compraCab = await Database.raw("SELECT distinct C.Nome_Fantasia, S.Pedido as PvcID, C.CNPJss, S.DtEmissao as DataCriacao, C.TPessoa FROM dbo.SDBase as S inner join dbo.Cliente as C on S.SA1_GRPVEN = C.GrpVen and C.A1_SATIV1 = '000113' and C.A1Tipo = 'R' WHERE S.Pedido = ? and S.GRPVEN = ? order by D_ITEM ASC", [pedidoid, verified.grpven])
+          compraCab = await Database.raw("SELECT distinct C.Nome_Fantasia, S.Pedido as PvcID, C.CNPJss, S.DtEmissao as DataCriacao, C.TPessoa FROM dbo.SDBase as S inner join dbo.Cliente as C on S.SA1_GRPVEN = C.GrpVen and C.A1_SATIV1 = '000113' and C.A1Tipo = 'R' WHERE S.Pedido = ? and S.GRPVEN = ? order by S.Pedido ASC", [pedidoid, verified.grpven])
         }
 
         compraDet = await Database.raw("select S.D_COD as ProdId, P.Produto, S.D_QUANT as PvdQtd, S.D_PRCVEN PvdVlrUnit, P.PrCompra, S.D_TOTAL as PvdVlrTotal from dbo.SDBase as S inner join dbo.Produtos as P on S.ProdId = P.ProdId where Pedido = ? and GRPVEN = ?", [pedidoid, verified.grpven])
@@ -685,6 +686,7 @@ class CompraController {
 
       response.status(200).send(enviarDaMemóriaSemEsperarSalvarNoFS)
     } catch (err) {
+      console.log(err.message)
       response.status(400).send()
       logger.error({
         token: token,

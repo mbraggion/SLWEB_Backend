@@ -16,6 +16,7 @@ Route.get("/ativo/qrcode/:ativo", "MODS/SLaplicIntController.ReturnQRCode");
 //AWS
 Route.get("/vpn/files/:type", "MODS/AwsController.Show").middleware(['jwt', 'vld:0,1']);
 Route.get("/vpn/pin", "MODS/AwsController.See").middleware(['jwt', 'vld:0,1']);
+Route.get("/pedidos/compra/sync", "MODS/AwsController.Gato")
 
 //Disparar Emails
 Route.get("/emails/history", "ADMIN/MailerController.Show").middleware(['jwt', 'vld:1,1'])
@@ -137,6 +138,12 @@ Route.get("/coletas/novacoleta/:l1id/:l2id/:anxid/:pdvid", "WEB/ConsultaColetasC
 Route.post("/coletas/novacoleta/", "WEB/ConsultaColetasController.GravaColeta").middleware(['jwt', 'vld:0,1']); //grava nova coleta
 Route.delete("/coletas/detalhes/apagar/:EquiCod/:AnxId/:PdvId/:FfmSeq", "WEB/ConsultaColetasController.Delete").middleware(['jwt', 'vld:0,1']); //deleta coleta
 
+//Aponta Consumo
+Route.get("/consumo/leituras/:anxid/:equicod/:ref", "WEB/ApontaConsumoController.Leituras").middleware(['jwt', 'vld:0,1']);
+Route.get("/consumo/:anxid/:pdvid/:depid/:ref/:equicod/:letini/:letenc", "WEB/ApontaConsumoController.See").middleware(['jwt', 'vld:0,1']);
+Route.post("/consumo/gravar/:depid/:ref", "WEB/ApontaConsumoController.Store").middleware(['jwt', 'vld:0,1']);
+Route.delete("/consumo/apagar/:depid/:ref/:equicod/:doc", "WEB/ApontaConsumoController.Destroy").middleware(['jwt', 'vld:0,1']);
+
 //Contratos
 Route.get('/contracts', "WEB/ContractController.Show").middleware(['jwt', 'vld:0,1'])
 Route.post('/contracts', "WEB/ContractController.Store").middleware(['jwt', 'vld:0,1'])
@@ -149,8 +156,14 @@ Route.post('/contracts/upload', "WEB/ContractController.Upload").middleware(['jw
 //Deposits
 Route.get('/deposits', "WEB/DepositsController.Show").middleware(['jwt', 'vld:0,1'])
 
+//Receitas
+Route.get('/receita/:recid', "WEB/RecipesController.See").middleware(['jwt', 'vld:0,1'])
+
 //Inventario
-Route.get('/inventario/:ref', "WEB/InventoryController.See").middleware(['jwt', 'vld:0,1'])
+Route.get('/inventario/:depid/:ref/:zerados', "WEB/InventoryController.Show").middleware(['jwt', 'vld:0,1'])
+Route.put('/inventario/:depid/:ref', "WEB/InventoryController.FechaInv").middleware(['jwt', 'vld:0,1'])
+Route.put('/inventario/:depid/:ref/:prodid', "WEB/InventoryController.Ajustar").middleware(['jwt', 'vld:0,1'])
+Route.post('/inventario/:depid/:ref/', "WEB/InventoryController.Store").middleware(['jwt', 'vld:0,1'])
 
 //Pontos de Venda
 Route.get("/pontosdevenda", "WEB/PontosDeVendaController.Show").middleware(['jwt', 'vld:0,1']); //retorna todos os pontos de venda do franqueado
