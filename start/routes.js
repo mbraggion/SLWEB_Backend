@@ -158,6 +158,7 @@ Route.post('/contracts/upload', "WEB/ContractController.Upload").middleware(['jw
 Route.get('/deposits', "WEB/DepositsController.Show").middleware(['jwt', 'vld:0,1'])
 
 //Receitas
+Route.get('/receita', 'WEB/RecipesController.Show').middleware(['jwt', 'vld:0,1']);
 Route.get('/receita/:recid', "WEB/RecipesController.See").middleware(['jwt', 'vld:0,1'])
 
 //Inventario
