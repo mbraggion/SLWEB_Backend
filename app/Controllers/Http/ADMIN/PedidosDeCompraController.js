@@ -39,7 +39,7 @@ class PedidosDeCompra {
         }
       }
 
-      let transportadoras = await Database.raw('use SDBP12 select A4_COD, A4_NREDUZ from dbo.SA4010 use SLAPLIC')
+      let transportadoras = await Database.raw('select A4_COD, A4_NREDUZ from SLCafes.SDBP12.dbo.SA4010 ')
 
       response.status(200).send({
         Pedidos: pedidosDeCompraEmAberto,

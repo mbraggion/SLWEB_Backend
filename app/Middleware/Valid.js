@@ -37,7 +37,7 @@ class Valid {
       }
 
     } catch (err) {
-      response.status(423).send()
+      response.status(423).send(err.message)
       logger.error({
         token: token,
         params: params,

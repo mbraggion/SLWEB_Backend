@@ -131,6 +131,7 @@ Route.put("/monitor/telemetrias/chamado", "WEB/MonitorController.FecharChamado")
 
 //Consulta Coletas
 Route.get("/coletas", "WEB/ConsultaColetasController.Show").middleware(['jwt', 'vld:0,1']); //retorna todas as coletas do franqueado
+Route.get("/coletas/pdf/:anxid/:pdvid/:fseq", "WEB/ConsultaColetasController.GenPDF").middleware(['jwt', 'vld:0,1']); //gera pdf
 Route.get("/coletas/detalhes/:anxid/:pdvid/:fseq", "WEB/ConsultaColetasController.See").middleware(['jwt', 'vld:0,1']); //retorna dados da coleta
 Route.get("/coletas/detalhes/minimo/:Equicod", "WEB/ConsultaColetasController.CalcMin").middleware(['jwt', 'vld:0,1']); //retorna dados para calculo de minimo
 Route.get("/coletas/historico/:equicod/:anxid", "WEB/ConsultaColetasController.NovaColetaOptions").middleware(['jwt', 'vld:0,1']); //retorna info sobre a última coleta do eq
