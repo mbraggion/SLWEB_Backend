@@ -160,6 +160,9 @@ Route.get('/deposits', "WEB/DepositsController.Show").middleware(['jwt', 'vld:0,
 //Receitas
 Route.get('/receita', 'WEB/RecipesController.Show').middleware(['jwt', 'vld:0,1']);
 Route.get('/receita/:recid', "WEB/RecipesController.See").middleware(['jwt', 'vld:0,1'])
+Route.post('/receita', "WEB/RecipesController.Store").middleware(['jwt', 'vld:0,1'])
+Route.put('/receita', "WEB/RecipesController.Update").middleware(['jwt', 'vld:0,1'])
+Route.put('/receita/inativar', "WEB/RecipesController.Inativar").middleware(['jwt', 'vld:0,1'])
 
 //Inventario
 Route.get('/inventario/:depid/:ref/:zerados', "WEB/InventoryController.Show").middleware(['jwt', 'vld:0,1'])
