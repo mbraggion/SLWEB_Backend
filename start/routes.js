@@ -16,7 +16,8 @@ Route.get("/ativo/qrcode/:ativo", "MODS/SLaplicIntController.ReturnQRCode");
 //AWS
 Route.get("/vpn/files/:type", "MODS/AwsController.Show").middleware(['jwt', 'vld:0,1']);
 Route.get("/vpn/pin", "MODS/AwsController.See").middleware(['jwt', 'vld:0,1']);
-Route.get("/pedidos/compra/sync", "MODS/AwsController.Gato")
+Route.get("/aws/sync/compras", "MODS/AwsController.GatoCompras")
+Route.get("/aws/sync/leituras", "MODS/AwsController.GatoLeituras")
 
 //Disparar Emails
 Route.get("/emails/history", "ADMIN/MailerController.Show").middleware(['jwt', 'vld:1,1'])
@@ -131,7 +132,7 @@ Route.put("/monitor/telemetrias/chamado", "WEB/MonitorController.FecharChamado")
 
 //Consulta Coletas
 Route.get("/coletas", "WEB/ConsultaColetasController.Show").middleware(['jwt', 'vld:0,1']); //retorna todas as coletas do franqueado
-Route.get("/coletas/pdf/:anxid/:pdvid/:fseq", "WEB/ConsultaColetasController.GenPDF").middleware(['jwt', 'vld:0,1']); //gera pdf
+Route.post("/coletas/pdf/:anxid/:pdvid/:fseq", "WEB/ConsultaColetasController.GenPDF").middleware(['jwt', 'vld:0,1']); //gera pdf
 Route.get("/coletas/detalhes/:anxid/:pdvid/:fseq", "WEB/ConsultaColetasController.See").middleware(['jwt', 'vld:0,1']); //retorna dados da coleta
 Route.get("/coletas/detalhes/minimo/:Equicod", "WEB/ConsultaColetasController.CalcMin").middleware(['jwt', 'vld:0,1']); //retorna dados para calculo de minimo
 Route.get("/coletas/historico/:equicod/:anxid", "WEB/ConsultaColetasController.NovaColetaOptions").middleware(['jwt', 'vld:0,1']); //retorna info sobre a última coleta do eq
@@ -141,6 +142,7 @@ Route.delete("/coletas/detalhes/apagar/:EquiCod/:AnxId/:PdvId/:FfmSeq", "WEB/Con
 
 //Aponta Consumo
 Route.get("/consumo/leituras/:anxid/:equicod/:ref", "WEB/ApontaConsumoController.Leituras").middleware(['jwt', 'vld:0,1']);
+Route.get("/consumo/excel/:anxid/:pdvid/:letini/:letenc", "WEB/ApontaConsumoController.GenExcel").middleware(['jwt', 'vld:0,1']);
 Route.get("/consumo/:anxid/:pdvid/:depid/:ref/:equicod/:letini/:letenc", "WEB/ApontaConsumoController.See").middleware(['jwt', 'vld:0,1']);
 Route.post("/consumo/gravar/:depid/:ref", "WEB/ApontaConsumoController.Store").middleware(['jwt', 'vld:0,1']);
 Route.delete("/consumo/apagar/:depid/:ref/:equicod/:doc", "WEB/ApontaConsumoController.Destroy").middleware(['jwt', 'vld:0,1']);

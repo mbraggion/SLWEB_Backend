@@ -7,6 +7,7 @@ const Helpers = use("Helpers");
 const logger = require("../../../../dump/index")
 const PdfPrinter = require("pdfmake");
 const fs = require("fs");
+const toArray = require('stream-to-array')
 const { PDFGen } = require('../../../../resources/pdfModels/relatorioColeta')
 
 moment.locale("pt-br");
@@ -327,9 +328,11 @@ class ConsultaColetasController {
 
   async GenPDF({ request, response, params }) {
     const token = request.header("authorization");
+    let { faturar } = request.only(['faturar'])
     const AnxId = params.anxid
     const PdvId = params.pdvid
     const FSeq = params.fseq
+
     const path = Helpers.publicPath(`/tmp`);
     const PathWithName = `${path}/${AnxId}-${PdvId}-${FSeq}.pdf`;
 
@@ -347,18 +350,22 @@ class ConsultaColetasController {
         ["C.I"]: FDAnt.filter(w => w.Sel === f.Sel)[0] ? FDAnt.filter(w => w.Sel === f.Sel)[0]["C.F"] : 0
       }))
 
-      const PDFModel = PDFGen(FD, FM[0], PDV[0], PVPROD);
+      faturar = faturar.map(f => ({
+        ...f,
+        Produto: PVPROD.filter(PD => PD.ProdId === f.ProdId)[0].Produto
+      }))
+
+      const PDFModel = PDFGen(FD, FM[0], PDV[0], PVPROD, faturar);
 
       var pdfDoc = printer.createPdfKitDocument(PDFModel);
       pdfDoc.pipe(fs.createWriteStream(PathWithName));
       pdfDoc.end();
 
-      // const enviarDaMemóriaSemEsperarSalvarNoFS = await toArray(pdfDoc).then(parts => {
-      //   return Buffer.concat(parts);
-      // })
+      const enviarDaMemóriaSemEsperarSalvarNoFS = await toArray(pdfDoc).then(parts => {
+        return Buffer.concat(parts);
+      })
 
-      // response.status(200).send(enviarDaMemóriaSemEsperarSalvarNoFS)
-      response.status(200).send()
+      response.status(200).send(enviarDaMemóriaSemEsperarSalvarNoFS)
     } catch (err) {
       response.status(400).send(err.message)
       logger.error({

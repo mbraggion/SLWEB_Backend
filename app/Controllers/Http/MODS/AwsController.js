@@ -2,6 +2,8 @@
 const Database = use("Database");
 const Drive = use("Drive");
 const { seeToken } = require('../../../Services/jwtServices')
+const { spawn } = require('child_process');
+const Helpers = use("Helpers");
 
 const logger = require("../../../../dump/index")
 
@@ -62,7 +64,7 @@ class AwsController {
     }
   }
 
-  async Gato({ response }) {
+  async GatoCompras({ response }) {
     try {
       let pedidosPendentesNaAWS = await Database.connection("mssql").raw("SELECT * FROM dbo.PedidosVenda WHERE CodigoTotvs is null and STATUS is null and Filial = '0201' and DataCriacao >= '2022-11-03 00:00:00.000'")
       let pedidosPendentesNaAWSMasQueJaSubiramPraPilao = []
@@ -196,6 +198,20 @@ class AwsController {
 
       if (contInsert > 0) {
         await Database.connection("mssql").raw("INSERT INTO SLCafes.SLAPLIC.dbo.PedidosCompraCab ( [GrpVen], [PedidoId], [STATUS], [Filial], [CpgId], [DataCriacao], [DataIntegracao], [NroNF], [SerieNF], [DtEmissNF], [ChaveNF], [MsgNF], [C5NUM] ) SELECT * from dbo.PedidosCompraCab where dbo.PedidosCompraCab.PedidoId not in ( select PedidoId from SLCafes.SLAPLIC.dbo.PedidosCompraCab )")
+
+        var ls = spawn(Helpers.publicPath('Carga_Pedidos_Compra_Para_TOTVs.bat'))
+
+        ls.stdout.on('data', function (data) {
+          console.log('execução: ' + data);
+        })
+
+        ls.stderr.on('data', function (data) {
+          console.log('erro: ' + data);
+        })
+
+        ls.on('exit', function (code) {
+          console.log('child process exited with code: ' + code);
+        })
       }
 
       response.status(200).send({
@@ -205,6 +221,22 @@ class AwsController {
         linhasInseridasNaBasePilao: contInsert,
         linhasAtualizadasNaBaseAWS: contUpdate,
       })
+    } catch (err) {
+      response.status(400).send({
+        error: err.message
+      })
+    }
+  }
+
+  async GatoLeituras({ response }) {
+    try {
+      // executar proc no 248
+      await Database.connection("old_mssql").raw("execute dbo.sp_SLTELLeituraApp")
+
+      // copiar leituras pra aws
+      await Database.connection("mssql").raw("insert into SLAPLIC.dbo.SLTELLeitura select * from SLCafes.SLAPLIC.dbo.SLTELLeitura where LeituraId not in ( select LeituraId from SLAPLIC.dbo.SLTELLeitura )")
+
+      response.status(200).send()
     } catch (err) {
       response.status(400).send({
         error: err.message

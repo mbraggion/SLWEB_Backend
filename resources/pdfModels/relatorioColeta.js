@@ -1,7 +1,7 @@
 const Helpers = use("Helpers");
 const moment = require("moment");
 
-exports.PDFGen = (FD, FM, PDV, PROD) => {
+exports.PDFGen = (FD, FM, PDV, PROD, Faturar) => {
   //obj que vai virar pdf
   var docDefinition = {
     // watermark: Helpers.resourcesPath("logo/Exemplo logo pilao - Danfe.bmp"),
@@ -64,9 +64,9 @@ exports.PDFGen = (FD, FM, PDV, PROD) => {
               { text: `${moment(FM.FfmDtColeta).format('L')}`, alignment: 'right' },
             ],
             [
-              { text: "Contador geral: ", bold: true },
+              { text: "Contador inicial: ", bold: true },
               { text: `${FM.FfmCNTAnt}`, alignment: 'right' },
-              { text: "Contador geral: ", bold: true },
+              { text: "Contador final: ", bold: true },
               { text: `${FM.FfmCNT}`, alignment: 'right' },
             ],
           ],
@@ -100,6 +100,24 @@ exports.PDFGen = (FD, FM, PDV, PROD) => {
                 }
               ]))),
             },
+            layout: {
+              fillColor: function (rowIndex, node, columnIndex) {
+                if (rowIndex === 0) {
+                  return '#CCCCCC'
+                } else {
+                  return '#FFFFFF'
+                };
+              },
+              hLineColor: function (lineIndex, node, i) {
+                return '#1b1b1b'
+              },
+              vLineColor: function (i, node, rowIndex) {
+                return '#1b1b1b'
+              },
+              paddingBottom: function (rowIndex, node) {
+                return (rowIndex === 0) ? 10 : 0;
+              },
+            }
           }
         ]
       },
@@ -127,17 +145,39 @@ exports.PDFGen = (FD, FM, PDV, PROD) => {
                 { text: f["C.F"], alignment: 'right' },
                 { text: f.Consumo, alignment: 'right' },
               ]))).concat([[
-                { text: '-', alignment: 'center' },
-                { text: 'TOTAL' },
-                { text: '-', alignment: 'center' },
-                { text: '-', alignment: 'center' },
+                { text: '', alignment: 'center' },
+                { text: 'TOTAL', style: 'whiteText' },
+                { text: '', alignment: 'center' },
+                { text: '', alignment: 'center' },
                 {
                   text: FD.reduce((acc, act) => {
                     return acc + act.Consumo
-                  }, 0), alignment: 'right'
+                  }, 0),
+                  alignment: 'right',
+                  style: 'whiteText'
                 },
               ]]),
             },
+            layout: {
+              fillColor: function (rowIndex, node, columnIndex) {
+                if (rowIndex === 0) {
+                  return '#CCCCCC'
+                } else if (rowIndex === node.table.body.length - 1) {
+                  return '#1b1b1b'
+                } else {
+                  return '#FFFFFF'
+                };
+              },
+              hLineColor: function (lineIndex, node, i) {
+                return '#1b1b1b'
+              },
+              vLineColor: function (i, node, rowIndex) {
+                return '#1b1b1b'
+              },
+              paddingBottom: function (rowIndex, node) {
+                return (rowIndex === 0) ? 10 : 0;
+              },
+            }
           }
         ]
       },
@@ -160,53 +200,72 @@ exports.PDFGen = (FD, FM, PDV, PROD) => {
                   { text: "Vlr. Total", bold: true },
                 ],
               ].concat(
-                FD
-                  .filter(w => w.Consumo > 0 && w["Vlr. Total"] > 0)
+                Faturar
                   .map(y => ([
                     { text: y.ProdId, alignment: 'right' },
                     { text: y.Produto },
-                    { text: y.Consumo, alignment: 'right' },
+                    { text: y.QVenda, alignment: 'right' },
                     {
                       text: new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL'
-                      }).format(y["Vlr. Un."]), alignment: 'right'
+                      }).format(y.VVenda), alignment: 'right'
                     },
                     {
                       text: new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL'
-                      }).format(0), alignment: 'right'
+                      }).format(Number(y.DVenda)), alignment: 'right'
                     },
                     {
                       text: new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL'
-                      }).format(y["Vlr. Total"]), alignment: 'right'
+                      }).format((y.VVenda - Number(y.DVenda)) * y.QVenda), alignment: 'right'
                     }
                   ]))
               ).concat(
                 [
                   [
-                    { text: "-", alignment: 'center' },
-                    { text: "TOTAL" },
-                    { text: "-", alignment: 'center' },
-                    { text: "-", alignment: 'center' },
-                    { text: "-", alignment: 'center' },
+                    { text: "", alignment: 'center' },
+                    { text: "TOTAL", style: 'whiteText' },
+                    { text: "", alignment: 'center' },
+                    { text: "", alignment: 'center' },
+                    { text: "", alignment: 'center' },
                     {
                       text: new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL'
-                      }).format(FD
-                        .filter(w => w.Consumo > 0 && w["Vlr. Total"] > 0)
+                      }).format(Faturar
                         .reduce((acc, act) => {
-                          return acc + act["Vlr. Total"]
+                          return acc + (act.VVenda - Number(act.DVenda)) * act.QVenda
                         }, 0)),
-                      alignment: 'right'
+                      alignment: 'right',
+                      style: 'whiteText'
                     }
                   ]
                 ]
               )
+            },
+            layout: {
+              fillColor: function (rowIndex, node, columnIndex) {
+                if (rowIndex === 0) {
+                  return '#CCCCCC'
+                } else if (rowIndex === node.table.body.length - 1) {
+                  return '#1b1b1b'
+                } else {
+                  return '#FFFFFF'
+                };
+              },
+              hLineColor: function (lineIndex, node, i) {
+                return '#1b1b1b'
+              },
+              vLineColor: function (i, node, rowIndex) {
+                return '#1b1b1b'
+              },
+              paddingBottom: function (rowIndex, node) {
+                return (rowIndex === 0) ? 10 : 0;
+              },
             }
           }
         ]
@@ -233,6 +292,9 @@ exports.PDFGen = (FD, FM, PDV, PROD) => {
         bold: true,
         margin: [0, 16, 0, 8],
       },
+      whiteText: {
+        color: '#FFF'
+      }
     },
   };
 
