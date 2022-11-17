@@ -183,6 +183,9 @@ Route.get('/pedidos/compra/integracao', 'ADMIN/PedidosDeCompraController.Integra
 Route.get('/pedidos/compra/:diff', 'ADMIN/PedidosDeCompraController.Show').middleware(['jwt', 'vld:1,1']);
 Route.put('/pedidos/compra/', 'ADMIN/PedidosDeCompraController.Update').middleware(['jwt', 'vld:1,1']);
 
+//Pedidos de venda
+Route.get('/pedidos/venda/', 'ADMIN/PedidosDeVendaController.Show').middleware(['jwt', 'vld:1,1']);
+
 //quebra galho
 Route.get("/SLAPLIC/ATT", "MODS/SLaplicIntController.AttSLAPLIC"); //baixa a versão mais recente do SLAplic
 

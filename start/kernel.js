@@ -38,7 +38,7 @@ const namedMiddleware = {
   auth: 'Adonis/Middleware/Auth',
   guest: 'Adonis/Middleware/AllowGuestOnly',
   jwt: 'App/Middleware/TokenValidate',
-  vld: 'App/Middleware/Valid',
+  vld: 'App/Middleware/Valid'
 }
 
 /*
@@ -52,6 +52,7 @@ const namedMiddleware = {
 |
 */
 const serverMiddleware = [
+  'App/Middleware/CTRL',
   'App/Middleware/Rastros',
   'Adonis/Middleware/Static',
   'Adonis/Middleware/Cors'

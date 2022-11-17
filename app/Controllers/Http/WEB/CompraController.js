@@ -38,7 +38,7 @@ class CompraController {
       Database.raw('execute dbo.sp_AcertaPedCompra')
 
       const Produtos = await Database.raw(queryProdutos);
-      
+
       const Desconto = await Database
         .select('ParamVlr')
         .from('dbo.Parametros')
@@ -90,7 +90,7 @@ class CompraController {
       const PedidosNaoFaturados = await Database.raw(queryPedidosAFaturar, [verified.grpven]);
 
       // busco as compras feitas durante o ano
-      const ComprasAoAno = await Database.raw(queryComprasAno, verified.grpven);
+      const ComprasAoAno = await Database.raw(queryComprasAno, [moment().year(), verified.user_code]);
 
       // verifico se o cara já tentou fazer algum scam com a empresa
       const Info = await Database.select('Confiavel', 'VlrMinCompra', 'UF').from('dbo.FilialEntidadeGrVenda').where({
@@ -124,7 +124,7 @@ class CompraController {
         Confiavel: Info[0].Confiavel,
         NaoCompensavel: nCompensa,
         VlrMinCompra: Info[0].VlrMinCompra,
-        Retira: Info[0].UF === 'SP' ? true : false 
+        Retira: Info[0].UF === 'SP' ? true : false
       });
     } catch (err) {
       response.status(400).send();
@@ -909,8 +909,7 @@ const queryBloqueado =
 const queryDuplicatas =
   "SELECT * FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) AND (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc WHERE SE1_GrpVen.GrpVen = ?";
 
-const queryComprasAno =
-  "SELECT * FROM ( SELECT dbo.SE1_GrpVenT.GrpVen, dbo.SE1_GrpVenT.MesE, dbo.SE1_GrpVenT.E1_VALOR FROM dbo.SE1_GrpVenT INNER JOIN SE1_Class ON (dbo.SE1_GrpVenT.E1_TIPO = SE1_Class.E1_TIPO) AND ( dbo.SE1_GrpVenT.E1_PREFIXO = SE1_Class.E1_PREFIXO ) WHERE ( ((dbo.SE1_GrpVenT.GrpVen) = ?) AND (SE1_Class.E1Desc = 'Compra' ) AND ((dbo.SE1_GrpVenT.AnoE) = Year(GETDATE())) ) ) t PIVOT ( Sum(t.E1_VALOR) FOR t.MesE IN( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12] ) ) p";
+const queryComprasAno = "SELECT * FROM ( SELECT dbo.FilialEntidadeGrVenda.M0_CODFIL, dbo.FilialEntidadeGrVenda.GrupoVenda, MONTH([DtEmissao]) AS mes, Year([DtEmissao]) AS ano, IIf([F2_VALFAT] = 0, 'Bonificação', 'Compra') AS Tipo, dbo.SDBase.D_TOTAL FROM ( dbo.SDBase INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.SDBase.GRPVEN = dbo.FilialEntidadeGrVenda.A1_GRPVEN ) INNER JOIN dbo.Produtos ON dbo.SDBase.ProdId = dbo.Produtos.ProdId WHERE ( ((dbo.SDBase.F_SERIE) = '1') AND ((dbo.SDBase.D_FILIAL) = '0201') AND ((dbo.SDBase.M0_TIPO) = 'E') AND ((Year([DtEmissao])) = ?) AND ((dbo.Produtos.ProdRoy) = 1) ) GROUP BY dbo.FilialEntidadeGrVenda.M0_CODFIL, dbo.FilialEntidadeGrVenda.GrupoVenda, dbo.SDBase.GRPVEN, dbo.SDBase.D_TOTAL, Year([DtEmissao]), MONTH([DtEmissao]), IIf([F2_VALFAT] = 0, 'Bonificação', 'Compra') ) t PIVOT ( Sum(t.D_TOTAL) FOR t.mes IN( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12] ) ) p where M0_CODFIL = ? order by Tipo DESC";
 
 const queryPedidosNaoAtendidos =
   "SELECT 'Processando' AS Status, dbo.PedidosCompraCab.DataCriacao AS Solicitacao, dbo.PedidosCompraCab.PedidoId as Pedido, '' as NF, '' as Serie, Sum(dbo.PedidosVenda.PrecoTotal) AS Total, Count(dbo.PedidosVenda.Item) AS QtItems FROM dbo.PedidosVenda  INNER JOIN dbo.PedidosCompraCab ON (dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial) AND (dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId)  WHERE (((dbo.PedidosCompraCab.NroNF) Is Null) AND ((dbo.PedidosCompraCab.GrpVen)=?) AND ((dbo.PedidosVenda.STATUS)<>'C' Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null))  GROUP BY dbo.PedidosCompraCab.STATUS, dbo.PedidosCompraCab.DataCriacao, dbo.PedidosCompraCab.PedidoId, dbo.PedidosVenda.CodigoTotvs  ORDER BY dbo.PedidosCompraCab.DataCriacao DESC";
@@ -927,4 +926,5 @@ const queryPedidosAtendidosDetPorDocNum =
 const queryLimiteDisponivel =
   "SELECT IIf( [Compras] > 0, [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) - [Compras], [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, IIF( dbo.FilialEntidadeGrVenda.LimExtraCredito is null, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) ) ) AS LimiteAtual FROM dbo.FilialEntidadeGrVenda LEFT JOIN ( SELECT SE1_GrpVen.GrpVen, Sum(SE1_GrpVen.E1_SALDO) AS Compras FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) AND (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc WHERE (((SE1_Class.E1Desc = 'Compra' ))) GROUP BY SE1_GrpVen.GrpVen ) as SE1_ComprasNVencidas ON dbo.FilialEntidadeGrVenda.A1_GRPVEN = SE1_ComprasNVencidas.GrpVen WHERE ( ((dbo.FilialEntidadeGrVenda.Inatv) Is Null) and dbo.FilialEntidadeGrVenda.A1_GRPVEN = ? )";
 
-const queryPedidosAFaturar = "SELECT IIF(Sum(dbo.PedidosVenda.PrecoTotal) is null, 0, Sum(dbo.PedidosVenda.PrecoTotal)) AS Total FROM dbo.PedidosVenda INNER JOIN dbo.PedidosCompraCab ON (     dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial ) AND (     dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId ) WHERE (     ((dbo.PedidosCompraCab.NroNF) Is Null)     AND ((dbo.PedidosCompraCab.GrpVen) = ?)     AND (    (dbo.PedidosVenda.STATUS) <> 'C'    Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null     ) )"
+const queryPedidosAFaturar =
+  "SELECT IIF(Sum(dbo.PedidosVenda.PrecoTotal) is null, 0, Sum(dbo.PedidosVenda.PrecoTotal)) AS Total FROM dbo.PedidosVenda INNER JOIN dbo.PedidosCompraCab ON (     dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial ) AND (     dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId ) WHERE (     ((dbo.PedidosCompraCab.NroNF) Is Null)     AND ((dbo.PedidosCompraCab.GrpVen) = ?)     AND (    (dbo.PedidosVenda.STATUS) <> 'C'    Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null     ) )"
