@@ -96,6 +96,8 @@ class Sl2TelController {
         ListInstalacoes(tokenTMT.data.access_token),
       ])
 
+      
+
       /* encontro na lista de máquina a que me interessa pelo ID e tambem 
       filtro se existe alguma instalacao com data de encerramento 'null'*/
       let ativoCorreto = maquinas.filter(maquina => String(maquina.NumeroDeSerie) === String(EquiCod))[0]

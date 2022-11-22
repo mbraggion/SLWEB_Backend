@@ -13,19 +13,53 @@ class PedidosDeVenda {
    */
   async Show({ request, response, params }) {
     try {
-      // const p = await Database
-      //   .connection("pg")
-      //   .select()
-      //   .from()
-      //   .where({});
 
-      const pedidos = await Database.raw(QUERY_PEDIDOS_DE_VENDA_A_FATURAR)
+
+      // buscar o "cab" e "det" dos pedidos pendentes
+      let [pedidosCab, pedidosDet] = await Promise.all([
+        Database.raw(QUERY_PEDIDOS_DE_VENDA_A_FATURAR_CAB),
+        Database.raw(QUERY_PEDIDOS_DE_VENDA_A_FATURAR_DET)
+      ]);
+
+      pedidosCab.forEach((pc, i) => {
+        pedidosCab[i].Itens = pedidosDet.filter(pd => pd.PedidoID === pc.PedidoID)
+      })
+
+      for (let index in pedidosCab) {
+        let [empresa, cliente] = await Promise.all([
+          Database.connection("pg").raw(QUERY_EMPRESA_NO_NASAJON, [pedidosCab[index].Filial]),
+          Database.connection("pg").raw(QUERY_CLIENTE_NO_NASAJON, [pedidosCab[index].CNPJi])
+        ]);
+
+        let pedido = { rows: [] }
+        if (empresa.rows.length > 0 && cliente.rows.length > 0) {
+          pedido = await Database
+            .connection("pg")
+            .raw(QUERY_PEDIDO_NO_NASAJON, [pedidosCab[index].PedidoID])
+        }
+
+        // let log = []
+        // if (pedido.rows.length > 0) {
+        //   log = await Database
+        //     .connection("pg")
+        //     .raw(QUERY_LOG_DO_PEDIDO_NO_NASAJON, [pedido.rows[0].id_pedido])
+        // }
+
+        // juntar todas as informações
+        pedidosCab[index].emitenteNoNasajon = empresa.rows.length > 0
+        pedidosCab[index].destinatarioNoNasajon = cliente.rows.length > 0
+        pedidosCab[index].pedidoNoNasajon = pedido.rows.length > 0
+        pedidosCab[index].pedido = pedido.rows
+        // pedidosCab[index].logDoPedidoNoNasajon = log
+      }
+
 
       response.status(200).send({
-        Pedidos: pedidos,
+        Pedidos: pedidosCab,
       });
     } catch (err) {
       response.status(400).send()
+      console.log(err.message)
       logger.error({
         token: token,
         params: null,
@@ -39,4 +73,9 @@ class PedidosDeVenda {
 
 module.exports = PedidosDeVenda;
 
-const QUERY_PEDIDOS_DE_VENDA_A_FATURAR = "SELECT dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.Filial, dbo.Cliente.Razão_Social as Cliente, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, Count(dbo.PedidosVenda.PedidoItemID) AS ItensNoPedido, Sum(dbo.PedidosVenda.PrecoTotal) AS ValorTotal, dbo.PedidosVenda.DataCriacao, Max(dbo.PedidosVenda.TES) AS MáxDeTES FROM dbo.PedidosVenda INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.PedidosVenda.Filial = dbo.FilialEntidadeGrVenda.M0_CODFIL INNER JOIN dbo.Cliente on dbo.Cliente.A1_COD = dbo.PedidosVenda.CodigoCliente and dbo.Cliente.A1_LOJA = dbo.PedidosVenda.LojaCliente WHERE (((dbo.PedidosVenda.CodigoTotvs) Is Null) and NASAJON = 'S') GROUP BY dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.Filial, dbo.Cliente.Razão_Social, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, dbo.PedidosVenda.DataCriacao, dbo.PedidosVenda.STATUS HAVING (((dbo.PedidosVenda.STATUS) Is Null)) ORDER BY dbo.PedidosVenda.DataCriacao DESC"
+const QUERY_PEDIDOS_DE_VENDA_A_FATURAR_CAB = "SELECT dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.Filial, dbo.Cliente.Razão_Social as Cliente, dbo.PedidosVenda.CNPJi, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, Count(dbo.PedidosVenda.PedidoItemID) AS ItensNoPedido, Sum(dbo.PedidosVenda.PrecoTotal) AS ValorTotal, dbo.PedidosVenda.DataCriacao, Max(dbo.PedidosVenda.TES) AS MáxDeTES FROM dbo.PedidosVenda INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.PedidosVenda.Filial = dbo.FilialEntidadeGrVenda.M0_CODFIL INNER JOIN dbo.Cliente on dbo.Cliente.A1_COD = dbo.PedidosVenda.CodigoCliente and dbo.Cliente.A1_LOJA = dbo.PedidosVenda.LojaCliente and dbo.PedidosVenda.CNPJi = dbo.Cliente.CNPJ WHERE (((dbo.PedidosVenda.CodigoTotvs) Is Null) and NASAJON = 'S') GROUP BY dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.Filial, dbo.PedidosVenda.CNPJi, dbo.Cliente.Razão_Social, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, dbo.PedidosVenda.DataCriacao, dbo.PedidosVenda.STATUS HAVING (((dbo.PedidosVenda.STATUS) Is Null)) ORDER BY dbo.PedidosVenda.DataCriacao DESC"
+const QUERY_PEDIDOS_DE_VENDA_A_FATURAR_DET = "SELECT dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.PedidoItemID, dbo.PedidosVenda.CodigoProduto, dbo.Produtos.Produto, dbo.PedidosVenda.QtdeVendida, dbo.PedidosVenda.PrecoUnitarioLiquido, dbo.PedidosVenda.VlrDesconto, dbo.PedidosVenda.PrecoTotal, dbo.PedidosVenda.TES FROM dbo.PedidosVenda INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.PedidosVenda.Filial = dbo.FilialEntidadeGrVenda.M0_CODFIL INNER JOIN dbo.Produtos on dbo.Produtos.ProdId = dbo.PedidosVenda.CodigoProduto WHERE ( dbo.PedidosVenda.CodigoTotvs Is Null and NASAJON = 'S' and dbo.PedidosVenda.STATUS Is Null ) ORDER BY dbo.PedidosVenda.PedidoID DESC, dbo.PedidosVenda.PedidoItemID ASC"
+const QUERY_EMPRESA_NO_NASAJON = "select * from ns.empresas where codigo = ?"
+const QUERY_CLIENTE_NO_NASAJON = "select * from ns.pessoas where chavecnpj = ?"
+const QUERY_PEDIDO_NO_NASAJON = "select * from swvix.pedido where num_externo = ?"
+const QUERY_LOG_DO_PEDIDO_NO_NASAJON = "select * from swvix.log_execucaojob where id_pedido = ?"
