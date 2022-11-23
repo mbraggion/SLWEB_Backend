@@ -38,19 +38,18 @@ class PedidosDeVenda {
             .raw(QUERY_PEDIDO_NO_NASAJON, [pedidosCab[index].PedidoID])
         }
 
-        // let log = []
-        // if (pedido.rows.length > 0) {
-        //   log = await Database
-        //     .connection("pg")
-        //     .raw(QUERY_LOG_DO_PEDIDO_NO_NASAJON, [pedido.rows[0].id_pedido])
-        // }
+        let log = { rows: [] }
+        if (pedido.rows.length > 0) {
+          log = await Database
+            .connection("pg")
+            .raw(QUERY_LOG_DO_PEDIDO_NO_NASAJON, [pedido.rows[0].id_pedido])
+        }
 
-        // juntar todas as informações
         pedidosCab[index].emitenteNoNasajon = empresa.rows.length > 0
         pedidosCab[index].destinatarioNoNasajon = cliente.rows.length > 0
         pedidosCab[index].pedidoNoNasajon = pedido.rows.length > 0
         pedidosCab[index].pedido = pedido.rows
-        // pedidosCab[index].logDoPedidoNoNasajon = log
+        pedidosCab[index].logDoPedidoNoNasajon = log.rows
       }
 
 
@@ -59,7 +58,6 @@ class PedidosDeVenda {
       });
     } catch (err) {
       response.status(400).send()
-      console.log(err.message)
       logger.error({
         token: token,
         params: null,
@@ -73,9 +71,9 @@ class PedidosDeVenda {
 
 module.exports = PedidosDeVenda;
 
-const QUERY_PEDIDOS_DE_VENDA_A_FATURAR_CAB = "SELECT dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.Filial, dbo.Cliente.Razão_Social as Cliente, dbo.PedidosVenda.CNPJi, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, Count(dbo.PedidosVenda.PedidoItemID) AS ItensNoPedido, Sum(dbo.PedidosVenda.PrecoTotal) AS ValorTotal, dbo.PedidosVenda.DataCriacao, Max(dbo.PedidosVenda.TES) AS MáxDeTES FROM dbo.PedidosVenda INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.PedidosVenda.Filial = dbo.FilialEntidadeGrVenda.M0_CODFIL INNER JOIN dbo.Cliente on dbo.Cliente.A1_COD = dbo.PedidosVenda.CodigoCliente and dbo.Cliente.A1_LOJA = dbo.PedidosVenda.LojaCliente and dbo.PedidosVenda.CNPJi = dbo.Cliente.CNPJ WHERE (((dbo.PedidosVenda.CodigoTotvs) Is Null) and NASAJON = 'S') GROUP BY dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.Filial, dbo.PedidosVenda.CNPJi, dbo.Cliente.Razão_Social, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, dbo.PedidosVenda.DataCriacao, dbo.PedidosVenda.STATUS HAVING (((dbo.PedidosVenda.STATUS) Is Null)) ORDER BY dbo.PedidosVenda.DataCriacao DESC"
+const QUERY_PEDIDOS_DE_VENDA_A_FATURAR_CAB = "SELECT dbo.PedidosVenda.PedidoID, dbo.PedidosVendaCab.PvTipo, dbo.PedidosVenda.Filial, dbo.Cliente.Razão_Social as Cliente, dbo.PedidosVenda.CNPJi, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, Count(dbo.PedidosVenda.PedidoItemID) AS ItensNoPedido, Sum(dbo.PedidosVenda.PrecoTotal) AS ValorTotal, dbo.PedidosVenda.DataCriacao, Max(dbo.PedidosVenda.TES) AS MáxDeTES FROM dbo.PedidosVenda INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.PedidosVenda.Filial = dbo.FilialEntidadeGrVenda.M0_CODFIL INNER JOIN dbo.PedidosVendaCab on dbo.PedidosVendaCab.PedidoId = dbo.PedidosVenda.PedidoID INNER JOIN dbo.Cliente on dbo.Cliente.A1_COD = dbo.PedidosVenda.CodigoCliente and dbo.Cliente.A1_LOJA = dbo.PedidosVenda.LojaCliente and dbo.PedidosVenda.CNPJi = dbo.Cliente.CNPJ WHERE ( ((dbo.PedidosVenda.CodigoTotvs) Is Null) and NASAJON = 'S' ) GROUP BY dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.Filial, dbo.PedidosVenda.CNPJi, dbo.Cliente.Razão_Social, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, dbo.PedidosVenda.DataCriacao, dbo.PedidosVenda.STATUS, dbo.PedidosVendaCab.PvTipo HAVING (((dbo.PedidosVenda.STATUS) Is Null)) ORDER BY dbo.PedidosVenda.DataCriacao DESC"
 const QUERY_PEDIDOS_DE_VENDA_A_FATURAR_DET = "SELECT dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.PedidoItemID, dbo.PedidosVenda.CodigoProduto, dbo.Produtos.Produto, dbo.PedidosVenda.QtdeVendida, dbo.PedidosVenda.PrecoUnitarioLiquido, dbo.PedidosVenda.VlrDesconto, dbo.PedidosVenda.PrecoTotal, dbo.PedidosVenda.TES FROM dbo.PedidosVenda INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.PedidosVenda.Filial = dbo.FilialEntidadeGrVenda.M0_CODFIL INNER JOIN dbo.Produtos on dbo.Produtos.ProdId = dbo.PedidosVenda.CodigoProduto WHERE ( dbo.PedidosVenda.CodigoTotvs Is Null and NASAJON = 'S' and dbo.PedidosVenda.STATUS Is Null ) ORDER BY dbo.PedidosVenda.PedidoID DESC, dbo.PedidosVenda.PedidoItemID ASC"
-const QUERY_EMPRESA_NO_NASAJON = "select * from ns.empresas where codigo = ?"
-const QUERY_CLIENTE_NO_NASAJON = "select * from ns.pessoas where chavecnpj = ?"
-const QUERY_PEDIDO_NO_NASAJON = "select * from swvix.pedido where num_externo = ?"
-const QUERY_LOG_DO_PEDIDO_NO_NASAJON = "select * from swvix.log_execucaojob where id_pedido = ?"
+const QUERY_EMPRESA_NO_NASAJON = "select empresa from ns.empresas where codigo = ?"
+const QUERY_CLIENTE_NO_NASAJON = "select pessoa from ns.pessoas where chavecnpj = ?"
+const QUERY_PEDIDO_NO_NASAJON = "select id_pedido, num_pedido, cod_operacao, status, cfop, processado, emitir from swvix.pedido where num_externo = ? order by dt_emissao DESC"
+const QUERY_LOG_DO_PEDIDO_NO_NASAJON = "select mensagem from swvix.log_execucaojob where id_pedido = ? order by datahora DESC, lastupdate DESC"

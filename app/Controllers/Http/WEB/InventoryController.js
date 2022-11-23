@@ -353,7 +353,14 @@ const calcAntAmount = (act, ant) => {
 }
 
 const queryInvDet = async (grpven, depid, year, month, user_code, invid) => {
-  const proc = await Database.raw(QUERY_PROC_GEN_INV, [grpven, depid, year, month, user_code, invid])
+  let proc = await Database.raw(QUERY_PROC_GEN_INV, [grpven, depid, year, month, user_code, invid])
+
+  // coloco os 'INVENTÁRIO INICIAL' e 'INVENTÁRIO FINAL' no inicio e fim do array respectivamente, se não da doidera...
+  proc = [
+    ...proc.filter(p => p.A1_NOME === 'INVENTÁRIO INICIAL'),
+    ...proc.filter(p => p.A1_NOME !== 'INVENTÁRIO INICIAL' && p.A1_NOME !== 'INVENTÁRIO FINAL'),
+    ...proc.filter(p => p.A1_NOME === 'INVENTÁRIO FINAL')
+  ]
 
   let procMod = {}
 

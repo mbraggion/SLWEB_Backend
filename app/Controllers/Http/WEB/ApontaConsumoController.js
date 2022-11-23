@@ -250,7 +250,6 @@ class ApontaConsumoController {
       response.status(200).send(location);
     } catch (err) {
       response.status(400).send();
-      console.log(err.message)
       logger.error({
         token: token,
         params: params,

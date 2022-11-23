@@ -350,10 +350,12 @@ class ConsultaColetasController {
         ["C.I"]: FDAnt.filter(w => w.Sel === f.Sel)[0] ? FDAnt.filter(w => w.Sel === f.Sel)[0]["C.F"] : 0
       }))
 
-      faturar = faturar.map(f => ({
-        ...f,
-        Produto: PVPROD.filter(PD => PD.ProdId === f.ProdId)[0].Produto
-      }))
+      faturar = faturar.map(f => {
+        return {
+          ...f,
+          Produto: PVPROD.filter(PD => PD.ProdId === f.ProdId)[0].Produto
+        }
+      })
 
       const PDFModel = PDFGen(FD, FM[0], PDV[0], PVPROD, faturar);
 
@@ -367,7 +369,7 @@ class ConsultaColetasController {
 
       response.status(200).send(enviarDaMemóriaSemEsperarSalvarNoFS)
     } catch (err) {
-      response.status(400).send(err.message)
+      response.status(400).send()
       logger.error({
         token: token,
         params: params,

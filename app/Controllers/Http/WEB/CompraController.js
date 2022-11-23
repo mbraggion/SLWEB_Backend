@@ -686,7 +686,6 @@ class CompraController {
 
       response.status(200).send(enviarDaMemóriaSemEsperarSalvarNoFS)
     } catch (err) {
-      console.log(err.message)
       response.status(400).send()
       logger.error({
         token: token,
