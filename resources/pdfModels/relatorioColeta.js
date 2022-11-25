@@ -241,7 +241,8 @@ exports.PDFGen = (FD, FM, PDV, PROD, Faturar) => {
                           return acc + (act.VVenda - Number(act.DVenda)) * act.QVenda
                         }, 0)),
                       alignment: 'right',
-                      style: 'whiteText'
+                      style: 'whiteText',
+                      noWrap: true
                     }
                   ]
                 ]
@@ -293,7 +294,8 @@ exports.PDFGen = (FD, FM, PDV, PROD, Faturar) => {
         margin: [0, 16, 0, 8],
       },
       whiteText: {
-        color: '#FFF'
+        color: '#FFF',
+        whiteSpace
       }
     },
   };
@@ -306,31 +308,31 @@ const montaEndereco = (pdv) => {
   let res = ''
 
   if (pdv.PdvLogradouroPV !== null && String(pdv.PdvLogradouroPV).trim() !== '') {
-    res.length > 0 ? res = res.concat(`, ${pdv.PdvLogradouroPV}`) : res = res.concat(pdv.PdvLogradouroPV)
+    res.length > 0 ? res = res.concat(`, ${pdv.PdvLogradouroPV}`).trim() : res = res.concat(pdv.PdvLogradouroPV).trim()
   }
 
   if (pdv.PdvNumeroPV !== null && String(pdv.PdvNumeroPV).trim() !== '') {
-    res.length > 0 ? res = res.concat(`, ${pdv.PdvNumeroPV}`) : res = res.concat(pdv.PdvNumeroPV)
+    res.length > 0 ? res = res.concat(`, ${pdv.PdvNumeroPV}`).trim() : res = res.concat(pdv.PdvNumeroPV).trim()
   }
 
   if (pdv.PdvComplementoPV !== null && String(pdv.PdvComplementoPV).trim() !== '') {
-    res.length > 0 ? res = res.concat(`, ${pdv.PdvComplementoPV}`) : res = res.concat(pdv.PdvComplementoPV)
+    res.length > 0 ? res = res.concat(`, ${pdv.PdvComplementoPV}`).trim() : res = res.concat(pdv.PdvComplementoPV).trim()
   }
 
   if (pdv.PdvBairroPV !== null && String(pdv.PdvBairroPV).trim() !== '') {
-    res.length > 0 ? res = res.concat(`, ${pdv.PdvBairroPV}`) : res = res.concat(pdv.PdvBairroPV)
+    res.length > 0 ? res = res.concat(`, ${pdv.PdvBairroPV}`).trim() : res = res.concat(pdv.PdvBairroPV).trim()
   }
 
   if (pdv.PdvCidadePV !== null && String(pdv.PdvCidadePV).trim() !== '') {
-    res.length > 0 ? res = res.concat(`, ${pdv.PdvCidadePV}`) : res = res.concat(pdv.PdvCidadePV)
+    res.length > 0 ? res = res.concat(`, ${pdv.PdvCidadePV}`).trim() : res = res.concat(pdv.PdvCidadePV).trim()
   }
 
   if (pdv.PdvUfPV !== null && String(pdv.PdvUfPV).trim() !== '') {
-    res.length > 0 ? res = res.concat(`, ${pdv.PdvUfPV}`) : res = res.concat(pdv.PdvUfPV)
+    res.length > 0 ? res = res.concat(`, ${pdv.PdvUfPV}`).trim() : res = res.concat(pdv.PdvUfPV).trim()
   }
 
   if (pdv.PdvCEP !== null && String(pdv.PdvCEP).trim() !== '') {
-    res.length > 0 ? res = res.concat(`, ${pdv.PdvCEP}`) : res = res.concat(pdv.PdvCEP)
+    res.length > 0 ? res = res.concat(`, ${pdv.PdvCEP}`).trim() : res = res.concat(pdv.PdvCEP).trim()
   }
 
   return res

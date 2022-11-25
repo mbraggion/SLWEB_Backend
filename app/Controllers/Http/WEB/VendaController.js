@@ -125,7 +125,7 @@ class VendaController {
     try {
       const verified = seeToken(token);
 
-      const ultPvcId = await Database.raw("select MAX(PvcID) as UltimoID from dbo.PedidosVendaCab where PvcSerie = 'F' and GrpVen = ?", [verified.grpven]);
+      const ultPvcId = await Database.raw("select MAX(PvcID) as UltimoID from dbo.PedidosVendaCab where GrpVen = ?", [verified.grpven]);
 
       const actualDate = moment().subtract(3, "hours").toDate()
 

@@ -167,6 +167,15 @@ class FranquiasController {
         ClienteStatus: 'A'
       }).into('dbo.Cliente')
 
+      await Database.insert({
+        GrpVen: String(FormData.GrpVen).trim().substring(0, 6),
+        DepId: 1,
+        DepNome: 'CENTRAL',
+        DepTipo: null,
+        Inativo: null,
+        DepDL: null
+      }).into('dbo.Deposito')
+
       response.status(200).send();
     } catch (err) {
       response.status(400).send();

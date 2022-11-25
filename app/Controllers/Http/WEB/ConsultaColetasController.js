@@ -353,7 +353,9 @@ class ConsultaColetasController {
       faturar = faturar.map(f => {
         return {
           ...f,
-          Produto: PVPROD.filter(PD => PD.ProdId === f.ProdId)[0].Produto
+          Produto: String(f.ProdId) === '12708'
+            ? 'DIFERENCA DE MINIMO (DOSE FRANQUEADO)'
+            : PVPROD.filter(PD => String(PD.ProdId) === String(f.ProdId))[0].Produto
         }
       })
 
