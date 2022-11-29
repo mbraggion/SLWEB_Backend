@@ -133,7 +133,7 @@ class Sl2TelController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'Sl2TelController.Update',
       })
     }

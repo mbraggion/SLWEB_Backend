@@ -25,7 +25,7 @@ class PontosDeVendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PontosDeVendaController.Show',
       })
     }
@@ -93,7 +93,7 @@ class PontosDeVendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PontosDeVendaController.See',
       })
     }
@@ -139,7 +139,7 @@ class PontosDeVendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PontosDeVendaController.InativPDV',
       })
     }
@@ -285,7 +285,7 @@ class PontosDeVendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PontosDeVendaController.Update',
       })
     }

@@ -32,7 +32,7 @@ class RecipesController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'RecipesController.Show',
       })
     }
@@ -75,7 +75,7 @@ class RecipesController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'RecipesController.See',
       })
     }
@@ -122,7 +122,7 @@ class RecipesController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'RecipesController.Store',
       })
     }
@@ -172,7 +172,7 @@ class RecipesController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'RecipesController.Update',
       })
     }
@@ -204,7 +204,7 @@ class RecipesController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'RecipesController.Inativar',
       })
     }

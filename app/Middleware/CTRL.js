@@ -30,7 +30,7 @@ class CTRL {
         token: null,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CTRL.handle',
       })
     }

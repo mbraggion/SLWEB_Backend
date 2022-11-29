@@ -43,7 +43,7 @@ class ProfileController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ProfileController.Show',
       })
     }
@@ -92,7 +92,7 @@ class ProfileController {
           token: token,
           params: null,
           payload: request.body,
-          err: err,
+          err: err.message,
           handler: 'ProfileController.ChangePassword',
         })
       }
@@ -124,7 +124,7 @@ class ProfileController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ProfileController.ChangeEmail',
       })
     }
@@ -159,7 +159,7 @@ class ProfileController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ProfileController.ChangeTax',
       })
     }

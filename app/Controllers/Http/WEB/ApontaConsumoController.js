@@ -40,7 +40,7 @@ class ApontaConsumoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ApontaConsumoController.Leituras',
       })
     }
@@ -76,7 +76,7 @@ class ApontaConsumoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ApontaConsumoController.See',
       })
     }
@@ -157,7 +157,7 @@ class ApontaConsumoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ApontaConsumoController.Store',
       })
     }
@@ -204,7 +204,7 @@ class ApontaConsumoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ApontaConsumoController.Destroy',
       })
     }
@@ -254,7 +254,7 @@ class ApontaConsumoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ApontaConsumoController.GenExcel',
       })
     }

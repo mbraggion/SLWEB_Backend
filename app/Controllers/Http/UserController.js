@@ -54,7 +54,7 @@ class UserController {
         token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.Login',
       })
     }
@@ -103,7 +103,7 @@ class UserController {
         token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.Forgot',
       })
     }
@@ -134,7 +134,7 @@ class UserController {
         token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.AdmPartialLogin',
       })
     }
@@ -169,7 +169,7 @@ class UserController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.AdmFullLogin',
       })
     }
@@ -202,7 +202,7 @@ class UserController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.AdmLogoutFilial',
       })
     }
@@ -276,7 +276,7 @@ class UserController {
         token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.ExternalAuth',
       })
     }

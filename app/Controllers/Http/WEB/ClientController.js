@@ -24,7 +24,7 @@ class ClientController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ClientController.Show',
       })
     }
@@ -74,7 +74,7 @@ class ClientController {
         token: null,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ClientController.See',
       })
     }
@@ -161,7 +161,7 @@ class ClientController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ClientController.Store',
       })
     }
@@ -205,7 +205,7 @@ class ClientController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ClientController.Update',
       })
     }
@@ -236,7 +236,7 @@ class ClientController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ClientController.Inativar',
       })
     }
@@ -302,7 +302,7 @@ class ClientController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ClientController.Destroy',
       })
     }

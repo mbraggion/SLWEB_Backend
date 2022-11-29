@@ -40,7 +40,7 @@ class ContractController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Show',
       })
     }
@@ -159,7 +159,7 @@ class ContractController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.See',
       })
     }
@@ -279,7 +279,7 @@ class ContractController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Store',
       })
     }
@@ -366,7 +366,7 @@ class ContractController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Update',
       })
     }
@@ -437,7 +437,7 @@ class ContractController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Upload',
       })
     }
@@ -459,7 +459,7 @@ class ContractController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Download',
       })
     }
@@ -516,7 +516,7 @@ class ContractController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Inativar',
       })
     }

@@ -13,7 +13,7 @@ exports.seeToken = (token) => {
     //   token: token,
     //   params: null,
     //   payload: null,
-    //   err: err,
+    //   err: err.message,
     //   handler: 'jwtServices.seeToken',
     // })
     return err;
@@ -176,7 +176,7 @@ exports.genTokenExternal = async (code) => {
       token: null,
       params: null,
       payload: code,
-      err: err,
+      err: err.message,
       handler: 'jwtServices.genTokenExternal',
     })
     return null;

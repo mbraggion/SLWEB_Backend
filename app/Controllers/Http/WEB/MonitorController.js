@@ -27,7 +27,7 @@ class MonitorController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'MonitorController.Telemetrias',
       })
     }
@@ -99,7 +99,7 @@ class MonitorController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'MonitorController.AbrirChamado',
       })
     }
@@ -129,7 +129,7 @@ class MonitorController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'MonitorController.FecharChamado',
       })
     }

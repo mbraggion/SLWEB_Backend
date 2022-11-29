@@ -55,7 +55,7 @@ class LeadController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'LeadController.Show',
       })
     }
@@ -78,7 +78,7 @@ class LeadController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'LeadController.ShowADM',
       })
     }
@@ -100,7 +100,7 @@ class LeadController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'LeadController.See',
       })
     }
@@ -139,7 +139,7 @@ class LeadController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'LeadController.SeeADM',
       })
     }
@@ -215,7 +215,7 @@ class LeadController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'LeadController.Update',
       })
     }
@@ -240,7 +240,7 @@ class LeadController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'LeadController.SeeADM',
       })
     }
@@ -272,7 +272,7 @@ class LeadController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'LeadController.Store',
       })
     }

@@ -137,7 +137,7 @@ class CompartilhamentoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompartilhamentoController.Show',
       })
     }
@@ -172,7 +172,7 @@ class CompartilhamentoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompartilhamentoController.Download',
       })
     }
@@ -225,7 +225,7 @@ class CompartilhamentoController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompartilhamentoController.Upload',
       })
     }
@@ -288,7 +288,7 @@ class CompartilhamentoController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompartilhamentoController.ShowIndexedFolders',
       })
     }
@@ -327,7 +327,7 @@ class CompartilhamentoController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompartilhamentoController.UpdateIndexedFolder',
       })
     }
@@ -366,7 +366,7 @@ class CompartilhamentoController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompartilhamentoController.IndexFolder',
       })
     }
@@ -416,7 +416,7 @@ class CompartilhamentoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompartilhamentoController.MoveToTrash',
       })
     }
@@ -454,7 +454,7 @@ class CompartilhamentoController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompartilhamentoController.CreateFolder',
       })
     }
@@ -491,7 +491,7 @@ class CompartilhamentoController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompartilhamentoController.Rename',
       })
     }
@@ -542,7 +542,7 @@ class CompartilhamentoController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompartilhamentoController.Move',
       })
     }

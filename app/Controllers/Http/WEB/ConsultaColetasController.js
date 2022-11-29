@@ -47,7 +47,7 @@ class ConsultaColetasController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.Show',
       })
     }
@@ -73,7 +73,7 @@ class ConsultaColetasController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.See',
       })
     }
@@ -108,7 +108,7 @@ class ConsultaColetasController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.CalcMin',
       })
     }
@@ -143,7 +143,7 @@ class ConsultaColetasController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.NovaColetaOptions',
       })
     }
@@ -196,7 +196,7 @@ class ConsultaColetasController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.CalcColetas',
       })
     }
@@ -278,7 +278,7 @@ class ConsultaColetasController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.GravaColeta',
       })
     }
@@ -320,7 +320,7 @@ class ConsultaColetasController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.Delete',
       })
     }
@@ -376,7 +376,7 @@ class ConsultaColetasController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.GenPDF',
       })
     }

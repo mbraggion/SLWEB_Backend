@@ -51,7 +51,7 @@ class PedidosDeCompra {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PedidosDeCompra.Show',
       })
     }
@@ -98,7 +98,7 @@ class PedidosDeCompra {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PedidosDeCompra.Update',
       })
     }
@@ -129,7 +129,7 @@ class PedidosDeCompra {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PedidosDeCompra.Integrar',
       })
     }

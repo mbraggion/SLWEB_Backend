@@ -20,7 +20,7 @@ class SLaplicIntController {
         token: null,
         params: null,
         payload: null,
-        err: err,
+        err: err.message,
         handler: 'SLaplicIntController.AttSLAPLIC',
       })
     }

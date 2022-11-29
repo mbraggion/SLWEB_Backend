@@ -25,7 +25,7 @@ class GeneralController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'GeneralController.Filiais',
       })
     }
@@ -50,7 +50,7 @@ class GeneralController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'GeneralController.News',
       })
     }
@@ -79,7 +79,7 @@ class GeneralController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'GeneralController.StoreNews',
       })
     }
@@ -105,7 +105,7 @@ class GeneralController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'GeneralController.Destroy',
       })
     }
@@ -145,7 +145,7 @@ class GeneralController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'GeneralController.CheckNews',
       })
     }
@@ -181,7 +181,7 @@ class GeneralController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'GeneralController.CheckPendencias',
       })
     }

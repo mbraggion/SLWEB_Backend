@@ -159,7 +159,7 @@ class EquipRequestController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipRequestController.See',
       })
     }
@@ -183,7 +183,7 @@ class EquipRequestController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipRequestController.Show',
       })
     }
@@ -224,7 +224,7 @@ class EquipRequestController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipRequestController.SearchDefaultConfig',
       })
     }
@@ -243,7 +243,7 @@ class EquipRequestController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipRequestController.All',
       })
     }
@@ -379,7 +379,7 @@ class EquipRequestController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipRequestController.Store',
       })
     }
@@ -439,7 +439,7 @@ class EquipRequestController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipRequestController.RetriveOS',
       })
     }
@@ -485,7 +485,7 @@ class EquipRequestController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipRequestController.ViewCheck',
       })
     }
@@ -773,7 +773,7 @@ class EquipRequestController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipRequestController.ValidateOS',
       })
     }
@@ -801,7 +801,7 @@ class EquipRequestController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipRequestController.TecInfEqData',
       })
     }
@@ -904,7 +904,7 @@ class EquipRequestController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipRequestController.SistemOptions',
       })
     }
@@ -931,7 +931,7 @@ class EquipRequestController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipRequestController.GetCardInformation',
       })
     }

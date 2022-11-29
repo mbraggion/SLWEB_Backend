@@ -19,7 +19,7 @@ class ReferenceController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ReferenceController.Show',
       })
     }

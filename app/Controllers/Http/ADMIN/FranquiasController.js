@@ -25,7 +25,7 @@ class FranquiasController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'FranquiasController.Show',
       })
     }
@@ -183,7 +183,7 @@ class FranquiasController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'FranquiasController.Store',
       })
     }

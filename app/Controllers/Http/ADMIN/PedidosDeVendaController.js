@@ -62,7 +62,7 @@ class PedidosDeVenda {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PedidosDeVenda.Show',
       })
     }

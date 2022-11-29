@@ -60,10 +60,10 @@ Route.get("/compras/produtos", "WEB/CompraController.Produtos").middleware(['jwt
 Route.get("/compras/contas", "WEB/CompraController.Contas").middleware(['jwt', 'vld:0,1']); //retorna lista de produtos compraveis
 Route.get("/compras/pedidos", "WEB/CompraController.Pedidos").middleware(['jwt', 'vld:0,1']); //retorna pedidos atendidos e abertos do cliente
 Route.get("/compras/pedidos/detalhes/:ID/:STATUS", "WEB/CompraController.PedidoDet").middleware(['jwt', 'vld:0,1']); //retorna detalhes do pedido
-Route.delete("/compras/pedidos/cancelar/:ID", "WEB/CompraController.Cancelar").middleware(['jwt', 'vld:0,1']); //retorna detalhes do pedido
+Route.delete("/compras/pedidos/cancelar/:ID", "WEB/CompraController.Cancelar").middleware(['jwt', 'vld:0,1']); //cancela pedido de compra
 Route.get("/compras/retriveboleto/:ID/:P", "WEB/CompraController.RetriveBoleto").middleware(['jwt', 'vld:0,1']); //retorna o pdf do pedido
 Route.get("/compras/retrivenfe/:ID", "WEB/CompraController.RetriveNota").middleware(['jwt', 'vld:0,1']); //retorna o pdf do pedido
-Route.post("/compras/comprar", "WEB/CompraController.Comprar").middleware(['jwt', 'vld:0,1']); //retorna detalhes do pedido
+Route.post("/compras/comprar", "WEB/CompraController.Comprar").middleware(['jwt', 'vld:0,1']); //comprar items
 Route.post("/compras/duplicatas/report/", "WEB/CompraController.Compensar").middleware(['jwt', 'vld:0,1']); //salva arquivo de duplicatas
 Route.get("/compras/pedidos/PDF/detalhes/:pedidoid/:status", "WEB/CompraController.GenPDFCompra").middleware(['jwt', 'vld:0,1']); //retorna pdf de venda
 Route.get("/compras/faturamento/rotas/:CEP", "WEB/CompraController.ConsultaRota").middleware(['jwt', 'vld:0,1']); //retorna previsão de faturamento e rota

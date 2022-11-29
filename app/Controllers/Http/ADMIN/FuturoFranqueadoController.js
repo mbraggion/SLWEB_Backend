@@ -88,7 +88,7 @@ class FuturoFranqueadoController {
         token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'FuturoFranqueadoController.RequestCod_V2',
       })
     }
@@ -161,7 +161,7 @@ class FuturoFranqueadoController {
         token: null,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'FuturoFranqueadoController.FutureCod_V2',
       })
     }
@@ -300,7 +300,7 @@ class FuturoFranqueadoController {
         token: null,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'FuturoFranqueadoController.UpdateForm',
       })
     }
@@ -370,7 +370,7 @@ class FuturoFranqueadoController {
         token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'FuturoFranqueadoController.FileUpload',
       })
     }
@@ -442,7 +442,7 @@ class FuturoFranqueadoController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'FuturoFranqueadoController.Show',
       })
     }
@@ -523,7 +523,7 @@ class FuturoFranqueadoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'FuturoFranqueadoController.GeneratePDF',
       })
     }
@@ -558,7 +558,7 @@ class FuturoFranqueadoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'FuturoFranqueadoController.GeneratePDF',
       })
     }
@@ -577,7 +577,7 @@ class FuturoFranqueadoController {
         token: null,
         params: null,
         payload: null,
-        err: err,
+        err: err.message,
         handler: 'FuturoFranqueadoController.RetriveWORDFORM',
       })
     }

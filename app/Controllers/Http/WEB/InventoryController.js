@@ -166,7 +166,7 @@ class InventoryController {
         token: token,
         params: params,
         payload: request.body,
-        err: err.message,
+        err: err.message.message,
         handler: 'InventoryController.Show',
       })
     }
@@ -218,7 +218,7 @@ class InventoryController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'InventoryController.Store',
       })
     }
@@ -266,7 +266,7 @@ class InventoryController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'InventoryController.Ajustar',
       })
     }
@@ -311,7 +311,7 @@ class InventoryController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'InventoryController.FechaInv',
       })
     }

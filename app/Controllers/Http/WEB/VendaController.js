@@ -61,7 +61,7 @@ class VendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.Produtos',
       })
     }
@@ -85,7 +85,7 @@ class VendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.Show',
       })
     }
@@ -111,7 +111,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.See',
       })
     }
@@ -202,7 +202,7 @@ class VendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.Store',
       })
     }
@@ -325,7 +325,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.Update',
       })
     }
@@ -370,7 +370,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.CancelVenda',
       })
     }
@@ -515,7 +515,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.RequestNFeGeneration',
       })
     }
@@ -608,7 +608,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.RecoverDocs',
       })
     }
@@ -647,7 +647,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.GenPDFVenda',
       })
     }

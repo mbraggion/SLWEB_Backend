@@ -30,7 +30,7 @@ class MailerController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'MailerController.Show',
       })
     }
@@ -68,7 +68,7 @@ class MailerController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'MailerController.See',
       })
     }
@@ -194,7 +194,7 @@ class MailerController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'MailerController.DispararEmail',
       })
     }

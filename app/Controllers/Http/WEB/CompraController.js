@@ -60,7 +60,7 @@ class CompraController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Produtos',
       })
     }
@@ -132,7 +132,7 @@ class CompraController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Contas',
       })
     }
@@ -159,7 +159,7 @@ class CompraController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Pedidos',
       })
     }
@@ -285,7 +285,7 @@ class CompraController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.PedidoDet',
       })
     }
@@ -352,27 +352,46 @@ class CompraController {
       const ProxId = Number(UltPedidoID[0].UltPedido) + 1;
 
       // converto cada kit em QtdKit * QtdProd, removo o kit do carrinho
-      let kit = Items
-        .filter(kit => String(kit.Cód) === String(251122))[0]
+      // let kit1 = Items
+      //   .filter(kit => String(kit.Cód) === String(251122))[0]
 
-      if (typeof kit !== 'undefined') {
-        itensDoKit.forEach(it => {
-          Items.push({
-            Cód: it.Cód,
-            Produto: it.Produto,
-            QtMin: it.QtMin,
-            VlrUn: it.VlrUn,
-            Vlr: it.Vlr,
-            FatConversao: it.FatConversao,
-            ProdRoy: it.ProdRoy,
-            QCompra: it.QCompra * kit.QCompra, 
-          })
-        })
+      // if (typeof kit1 !== 'undefined') {
+      //   itensDoKit1.forEach(it => {
+      //     Items.push({
+      //       Cód: it.Cód,
+      //       Produto: it.Produto,
+      //       QtMin: it.QtMin,
+      //       VlrUn: it.VlrUn,
+      //       Vlr: it.Vlr,
+      //       FatConversao: it.FatConversao,
+      //       ProdRoy: it.ProdRoy,
+      //       QCompra: it.QCompra * kit1.QCompra, 
+      //     })
+      //   })
 
-        Items = Items.filter(it => String(it.Cód) !== String(251122))
-      }
+      //   Items = Items.filter(it => String(it.Cód) !== String(251122))
+      // }
 
-      console.log(Items)
+      // converto cada kit em QtdKit * QtdProd, removo o kit do carrinho
+      // let kit2 = Items
+      //   .filter(kit => String(kit.Cód) === String(221125))[0]
+
+      // if (typeof kit2 !== 'undefined') {
+      //   itensDoKit2.forEach(it => {
+      //     Items.push({
+      //       Cód: it.Cód,
+      //       Produto: it.Produto,
+      //       QtMin: it.QtMin,
+      //       VlrUn: it.VlrUn,
+      //       Vlr: it.Vlr,
+      //       FatConversao: it.FatConversao,
+      //       ProdRoy: it.ProdRoy,
+      //       QCompra: it.QCompra * kit2.QCompra, 
+      //     })
+      //   })
+
+      //   Items = Items.filter(it => String(it.Cód) !== String(221125))
+      // }
 
       //salvo o pedido nas tabelas
       await Database.insert({
@@ -426,7 +445,7 @@ class CompraController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Comprar',
       })
     }
@@ -480,7 +499,7 @@ class CompraController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Cancelar',
       })
     }
@@ -505,7 +524,7 @@ class CompraController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.RetriveBoleto',
       })
     }
@@ -529,7 +548,7 @@ class CompraController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.RetriveNota',
       })
     }
@@ -663,7 +682,7 @@ class CompraController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Compensar',
       })
     }
@@ -713,7 +732,7 @@ class CompraController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.GenPDFCompra',
       })
     }
@@ -783,7 +802,7 @@ class CompraController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.ConsultaRota',
       })
     }
@@ -792,48 +811,81 @@ class CompraController {
 
 module.exports = CompraController;
 
-const itensDoKit = [
-  {
-    Cód: 2631,
-    Produto: "ACHOCOLATADO PILAO PROFESSIONAL (PACOTE 1,05KG)",
-    QtMin: 1.05,
-    VlrUn: 33.2715,
-    Vlr: 34.9350,
-    FatConversao: 1.05,
-    ProdRoy: 1,
-    QCompra: 4
-  },
-  {
-    Cód: 4433,
-    Produto: "CAFE PILAO EXPRESSO INSTITUCIONAL (PACOTE 1KG)",
-    QtMin: 1,
-    VlrUn: 41.2284,
-    Vlr: 41.2284,
-    FatConversao: 1,
-    ProdRoy: 1,
-    QCompra: 6
-  },
-  {
-    Cód: 2641,
-    Produto: "CAPPUCCINO PILAO PROFESSIONAL (PACOTE 1KG)",
-    QtMin: 1,
-    VlrUn: 48.5050,
-    Vlr: 48.5050,
-    FatConversao: 1,
-    ProdRoy: 1,
-    QCompra: 2
-  },
-  {
-    Cód: 2667,
-    Produto: "PP CAFE C/ LEITE PILAO PROFESSIONAL (PACOTE 1KG)",
-    QtMin: 1,
-    VlrUn: 49.3434,
-    Vlr: 49.3434,
-    FatConversao: 1,
-    ProdRoy: 1,
-    QCompra: 3
-  }
-]
+// const itensDoKit1 = [
+//   {
+//     Cód: 2631,
+//     Produto: "ACHOCOLATADO PILAO PROFESSIONAL (PACOTE 1,05KG)",
+//     QtMin: 1.05,
+//     VlrUn: 33.2715,
+//     Vlr: 34.9350,
+//     FatConversao: 1.05,
+//     ProdRoy: 1,
+//     QCompra: 4
+//   },
+//   {
+//     Cód: 4433,
+//     Produto: "CAFE PILAO EXPRESSO INSTITUCIONAL (PACOTE 1KG)",
+//     QtMin: 1,
+//     VlrUn: 41.2284,
+//     Vlr: 41.2284,
+//     FatConversao: 1,
+//     ProdRoy: 1,
+//     QCompra: 6
+//   },
+//   {
+//     Cód: 2641,
+//     Produto: "CAPPUCCINO PILAO PROFESSIONAL (PACOTE 1KG)",
+//     QtMin: 1,
+//     VlrUn: 48.5050,
+//     Vlr: 48.5050,
+//     FatConversao: 1,
+//     ProdRoy: 1,
+//     QCompra: 2
+//   },
+//   {
+//     Cód: 2667,
+//     Produto: "PP CAFE C/ LEITE PILAO PROFESSIONAL (PACOTE 1KG)",
+//     QtMin: 1,
+//     VlrUn: 49.3434,
+//     Vlr: 49.3434,
+//     FatConversao: 1,
+//     ProdRoy: 1,
+//     QCompra: 3
+//   }
+// ]
+
+// const itensDoKit2 = [
+//   {
+//     Cód: 2631,
+//     Produto: "ACHOCOLATADO PILAO PROFESSIONAL (PACOTE 1,05KG)",
+//     QtMin: 1.05,
+//     VlrUn: 33.2715,
+//     Vlr: 34.9350,
+//     FatConversao: 1.05,
+//     ProdRoy: 1,
+//     QCompra: 5
+//   },
+//   {
+//     Cód: 4433,
+//     Produto: "CAFE PILAO EXPRESSO INSTITUCIONAL (PACOTE 1KG)",
+//     QtMin: 1,
+//     VlrUn: 41.2284,
+//     Vlr: 41.2284,
+//     FatConversao: 1,
+//     ProdRoy: 1,
+//     QCompra: 6
+//   },
+//   {
+//     Cód: 2641,
+//     Produto: "CAPPUCCINO PILAO PROFESSIONAL (PACOTE 1KG)",
+//     QtMin: 1,
+//     VlrUn: 48.5050,
+//     Vlr: 48.5050,
+//     FatConversao: 1,
+//     ProdRoy: 1,
+//     QCompra: 4
+//   }
+// ]
 
 const matchCEPWithRanges = (targetCEP, CEPRanges) => {
   const matchIndex = []

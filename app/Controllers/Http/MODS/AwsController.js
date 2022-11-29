@@ -31,7 +31,7 @@ class AwsController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'AwsController.Show',
       })
     }
@@ -58,7 +58,7 @@ class AwsController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'AwsController.See',
       })
     }
