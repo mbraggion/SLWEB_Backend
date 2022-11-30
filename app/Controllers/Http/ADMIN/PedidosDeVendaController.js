@@ -3,7 +3,6 @@
 
 const Database = use("Database");
 const Env = use("Env");
-const { seeToken } = require("../../../Services/jwtServices");
 const logger = require("../../../../dump/index")
 const { spawn } = require('child_process');
 
@@ -11,10 +10,10 @@ class PedidosDeVenda {
   /** @param {object} ctx
    * @param {import('@adonisjs/framework/src/Request')} ctx.request
    */
-  async Show({ request, response, params }) {
+  async Show({ request, response }) {
+    const token = request.header("authorization");
+
     try {
-
-
       // buscar o "cab" e "det" dos pedidos pendentes
       let [pedidosCab, pedidosDet] = await Promise.all([
         Database.raw(QUERY_PEDIDOS_DE_VENDA_A_FATURAR_CAB),
@@ -64,6 +63,102 @@ class PedidosDeVenda {
         payload: request.body,
         err: err.message,
         handler: 'PedidosDeVenda.Show',
+      })
+    }
+  }
+
+  async CancelRequest ({ request, response }) {
+    const token = request.header("authorization");
+
+    try{
+      // verificar se o pedido já subiu pro NSJ
+      // o pedido não pode ter sido faturado ainda(status !== 1), se sim, lançar erro
+      // atualizar com status 4 no NSJ
+
+      // colocar status C na dbo.PedidosVenda
+      // atualizo o status para P e removo o PedidoId na dbo.PedidosVendaCab
+
+      response.status(200).send()
+    }catch(err){
+      response.status(400).send()
+      logger.error({
+        token: token,
+        params: null,
+        payload: request.body,
+        err: err.message,
+        handler: 'PedidosDeVenda.CancelRequest',
+      })
+    }
+  }
+
+  async CancelSale ({ request, response }) {
+    const token = request.header("authorization");
+
+    try{
+
+      response.status(200).send()
+    }catch(err){
+      response.status(400).send()
+      logger.error({
+        token: token,
+        params: null,
+        payload: request.body,
+        err: err.message,
+        handler: 'PedidosDeVenda.CancelSale',
+      })
+    }
+  }
+
+  async DeprocessSale ({ request, response }) {
+    const token = request.header("authorization");
+
+    try{
+
+      response.status(200).send()
+    }catch(err){
+      response.status(400).send()
+      logger.error({
+        token: token,
+        params: null,
+        payload: request.body,
+        err: err.message,
+        handler: 'PedidosDeVenda.DeprocessSale',
+      })
+    }
+  }
+
+  async ReissueOrder ({ request, response }) {
+    const token = request.header("authorization");
+
+    try{
+
+      response.status(200).send()
+    }catch(err){
+      response.status(400).send()
+      logger.error({
+        token: token,
+        params: null,
+        payload: request.body,
+        err: err.message,
+        handler: 'PedidosDeVenda.ReissueOrder',
+      })
+    }
+  }
+
+  async ConvertToReturn ({ request, response }) {
+    const token = request.header("authorization");
+
+    try{
+
+      response.status(200).send()
+    }catch(err){
+      response.status(400).send()
+      logger.error({
+        token: token,
+        params: null,
+        payload: request.body,
+        err: err.message,
+        handler: 'PedidosDeVenda.ConvertToReturn',
       })
     }
   }

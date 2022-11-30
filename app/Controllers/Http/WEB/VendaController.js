@@ -390,6 +390,7 @@ class VendaController {
         .where({
           M0_CODFIL: verified.user_code,
         });
+        
       if (Sigamat[0].M0_EmiteNF === "N") throw new Error();
 
       //verifico se a nota já foi gerada, foi cancelada ou já foi solicitada.
