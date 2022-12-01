@@ -185,6 +185,10 @@ Route.put('/pedidos/compra/', 'ADMIN/PedidosDeCompraController.Update').middlewa
 
 //Pedidos de venda
 Route.get('/pedidos/venda/', 'ADMIN/PedidosDeVendaController.Show').middleware(['jwt', 'vld:1,1']);
+Route.put('/pedidos/venda/cancelar', 'ADMIN/PedidosDeVendaController.CancelRequest').middleware(['jwt', 'vld:1,1']);
+Route.put('/pedidos/venda/desprocessar', 'ADMIN/PedidosDeVendaController.DeprocessSale').middleware(['jwt', 'vld:1,1']);
+Route.put('/pedidos/venda/reprocessar', 'ADMIN/PedidosDeVendaController.ReissueOrder').middleware(['jwt', 'vld:1,1']);
+Route.put('/pedidos/venda/descartar', 'ADMIN/PedidosDeVendaController.CancelSale').middleware(['jwt', 'vld:1,1']);
 
 //quebra galho
 Route.get("/SLAPLIC/ATT", "MODS/SLaplicIntController.AttSLAPLIC"); //baixa a versão mais recente do SLAplic

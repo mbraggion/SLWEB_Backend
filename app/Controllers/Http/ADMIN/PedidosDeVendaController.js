@@ -27,7 +27,7 @@ class PedidosDeVenda {
       for (let index in pedidosCab) {
         let [empresa, cliente] = await Promise.all([
           Database.connection("pg").raw(QUERY_EMPRESA_NO_NASAJON, [pedidosCab[index].Filial]),
-          Database.connection("pg").raw(QUERY_CLIENTE_NO_NASAJON, [pedidosCab[index].CNPJi])
+          Database.connection("pg").raw(QUERY_CLIENTE_NO_NASAJON, [pedidosCab[index].CNPJ])
         ]);
 
         let pedido = { rows: [] }
@@ -67,20 +67,37 @@ class PedidosDeVenda {
     }
   }
 
-  async CancelRequest ({ request, response }) {
+  // TESTADO
+  async CancelRequest({ request, response }) {
     const token = request.header("authorization");
+    const { PedidoID } = request.only(['PedidoID'])
 
-    try{
+    try {
       // verificar se o pedido já subiu pro NSJ
+      let pedido = { rows: [] }
+
+      pedido = await Database
+        .connection("pg")
+        .raw(QUERY_PEDIDO_NO_NASAJON, [PedidoID])
+
       // o pedido não pode ter sido faturado ainda(status !== 1), se sim, lançar erro
-      // atualizar com status 4 no NSJ
+      if (pedido.rows.length > 0 && pedido.rows[0].status === 1) {
+        throw new Error('Nota já emitida');
+      } else if (pedido.rows.length > 0) {
+        // atualizar com status 4 no NSJ
+        await Database.connection('pg').raw('update swvix.pedido set status = 4 where num_externo = ?', [PedidoID])
+      }
 
       // colocar status C na dbo.PedidosVenda
+      await Database.raw("update dbo.PedidosVenda set STATUS = 'C' where PedidoID = ?", [PedidoID])
+
       // atualizo o status para P e removo o PedidoId na dbo.PedidosVendaCab
+      await Database.raw("update dbo.PedidosVendaCab set STATUS = 'P', PedidoId = null where PedidoId = ?", [PedidoID])
 
       response.status(200).send()
-    }catch(err){
+    } catch (err) {
       response.status(400).send()
+      console.log(err.message)
       logger.error({
         token: token,
         params: null,
@@ -91,13 +108,68 @@ class PedidosDeVenda {
     }
   }
 
-  async CancelSale ({ request, response }) {
+  // NÃO TESTADO
+  async CancelSale({ request, response }) {
     const token = request.header("authorization");
+    const { PedidoID } = request.only(['PedidoID'])
 
-    try{
+    try {
+      // let pedido = { rows: [] }
+
+      // pedido = await Database
+      //   .connection("pg")
+      //   .raw(QUERY_PEDIDO_NO_NASAJON, [PedidoID])
+
+      // if (
+      //   pedido.rows.length > 0 &&
+      //   (
+      //     pedido.rows[0].status === 2 || (
+      //       pedido.rows[0].status === 3 &&
+      //       pedido.rows[0].processado === false
+      //     ) || (
+      //       pedido.rows[0].status === 0 &&
+      //       pedido.rows[0].processado === false
+      //     )
+      //   )
+      // ) {
+      //   await Database
+      //     .connection('pg')
+      //     .raw(
+      //       'update swvix.pedido set status = 4, num_externo = ? where num_externo = ?',
+      //       [`${PedidoID}E`, PedidoID]
+      //     )
+      // }
+
+      // await Database.table("dbo.PedidosVendaCab")
+      //   .where({
+
+      //   })
+      //   .update({
+      //     STATUS: 'C',
+      //   });
+
+      // await Database.table("dbo.PedidosVenda")
+      //   .where({
+
+      //   })
+      //   .update({
+      //     STATUS: 'C',
+      //   });
+
+      // await Database.table("dbo.SDBase")
+      //   .where({
+
+      //   })
+      //   .update({
+      //     D_QUANT: 0,
+      //     VENVLR: 0,
+      //     D_PRCVEN: 0,
+      //     D_TOTAL: 0,
+      //     D_DESC: 0
+      //   });
 
       response.status(200).send()
-    }catch(err){
+    } catch (err) {
       response.status(400).send()
       logger.error({
         token: token,
@@ -109,14 +181,30 @@ class PedidosDeVenda {
     }
   }
 
-  async DeprocessSale ({ request, response }) {
+  // TESTADO
+  async DeprocessSale({ request, response }) {
     const token = request.header("authorization");
+    const { PedidoID } = request.only(['PedidoID'])
 
-    try{
+    try {
+      let pedido = { rows: [] }
+
+      pedido = await Database
+        .connection("pg")
+        .raw(QUERY_PEDIDO_NO_NASAJON, [PedidoID])
+
+      if (pedido.rows.length > 0 && pedido.rows[0].status === 1) {
+        throw new Error('Nota já emitida');
+      } else if (pedido.rows.length > 0) {
+        await Database.connection('pg').raw('update swvix.pedido set status = 4, num_externo = ? where num_externo = ?', [`${PedidoID}E`, PedidoID])
+      } else {
+        throw new Error('Pedido não está no nasajon')
+      }
 
       response.status(200).send()
-    }catch(err){
+    } catch (err) {
       response.status(400).send()
+      console.log(err.message)
       logger.error({
         token: token,
         params: null,
@@ -127,13 +215,28 @@ class PedidosDeVenda {
     }
   }
 
-  async ReissueOrder ({ request, response }) {
+  // NÃO TESTADO
+  async ReissueOrder({ request, response }) {
     const token = request.header("authorization");
+    const { PedidoID } = request.only(['PedidoID'])
 
-    try{
+    try {
+      let pedido = { rows: [] }
+
+      pedido = await Database
+        .connection("pg")
+        .raw(QUERY_PEDIDO_NO_NASAJON, [PedidoID])
+
+      if (pedido.rows.length > 0 && pedido.rows[0].status === 1) {
+        throw new Error('Nota já emitida');
+      } else if (pedido.rows.length > 0) {
+        await Database.connection('pg').raw('update swvix.pedido set status = 3, processado = 0 where num_externo = ?', [PedidoID])
+      } else {
+        throw new Error('Pedido não está no nasajon')
+      }
 
       response.status(200).send()
-    }catch(err){
+    } catch (err) {
       response.status(400).send()
       logger.error({
         token: token,
@@ -145,13 +248,18 @@ class PedidosDeVenda {
     }
   }
 
-  async ConvertToReturn ({ request, response }) {
+  // NÃO TESTADO
+  async ConvertToReturn({ request, response }) {
     const token = request.header("authorization");
+    const { PedidoID, ChaveRef } = request.only(['PedidoID', 'ChaveRef'])
+    try {
 
-    try{
+      // Trocar o tipo de operação do pedido(de VENDA para DEVOLUCAODEVENDA)
+      // Na tabela itempedido, referenciar os items do pedido de devolucao com a chavene do pedido a ser devolvido
+      // Colocar o CFOP 1202 devolucao dentro do estado, 2202 entre estados (tanto em pedido quanto itempedido)      
 
       response.status(200).send()
-    }catch(err){
+    } catch (err) {
       response.status(400).send()
       logger.error({
         token: token,
@@ -166,7 +274,7 @@ class PedidosDeVenda {
 
 module.exports = PedidosDeVenda;
 
-const QUERY_PEDIDOS_DE_VENDA_A_FATURAR_CAB = "SELECT dbo.PedidosVenda.PedidoID, dbo.PedidosVendaCab.PvTipo, dbo.PedidosVenda.Filial, dbo.Cliente.Razão_Social as Cliente, dbo.PedidosVenda.CNPJi, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, Count(dbo.PedidosVenda.PedidoItemID) AS ItensNoPedido, Sum(dbo.PedidosVenda.PrecoTotal) AS ValorTotal, dbo.PedidosVenda.DataCriacao, Max(dbo.PedidosVenda.TES) AS MáxDeTES FROM dbo.PedidosVenda INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.PedidosVenda.Filial = dbo.FilialEntidadeGrVenda.M0_CODFIL INNER JOIN dbo.PedidosVendaCab on dbo.PedidosVendaCab.PedidoId = dbo.PedidosVenda.PedidoID INNER JOIN dbo.Cliente on dbo.Cliente.A1_COD = dbo.PedidosVenda.CodigoCliente and dbo.Cliente.A1_LOJA = dbo.PedidosVenda.LojaCliente and dbo.PedidosVenda.CNPJi = dbo.Cliente.CNPJ WHERE ( ((dbo.PedidosVenda.CodigoTotvs) Is Null) and NASAJON = 'S' ) GROUP BY dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.Filial, dbo.PedidosVenda.CNPJi, dbo.Cliente.Razão_Social, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, dbo.PedidosVenda.DataCriacao, dbo.PedidosVenda.STATUS, dbo.PedidosVendaCab.PvTipo HAVING (((dbo.PedidosVenda.STATUS) Is Null)) ORDER BY dbo.PedidosVenda.DataCriacao DESC"
+const QUERY_PEDIDOS_DE_VENDA_A_FATURAR_CAB = "SELECT dbo.PedidosVenda.PedidoID, dbo.PedidosVendaCab.PvTipo, dbo.PedidosVenda.Filial, dbo.FilialEntidadeGrVenda.GrupoVenda, dbo.Cliente.Razão_Social as Cliente, dbo.PedidosVenda.CNPJi, dbo.Cliente.CNPJ, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, Count(dbo.PedidosVenda.PedidoItemID) AS ItensNoPedido, Sum(dbo.PedidosVenda.PrecoTotal) AS ValorTotal, dbo.PedidosVenda.DataCriacao, Max(dbo.PedidosVenda.TES) AS MáxDeTES FROM dbo.PedidosVenda INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.PedidosVenda.Filial = dbo.FilialEntidadeGrVenda.M0_CODFIL INNER JOIN dbo.PedidosVendaCab on dbo.PedidosVendaCab.PedidoId = dbo.PedidosVenda.PedidoID INNER JOIN dbo.Cliente on dbo.Cliente.A1_COD = dbo.PedidosVenda.CodigoCliente and dbo.Cliente.A1_LOJA = dbo.PedidosVenda.LojaCliente WHERE ( ((dbo.PedidosVenda.CodigoTotvs) Is Null) and NASAJON = 'S' ) GROUP BY dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.Filial, dbo.FilialEntidadeGrVenda.GrupoVenda, dbo.PedidosVenda.CNPJi, dbo.Cliente.CNPJ, dbo.Cliente.Razão_Social, dbo.PedidosVenda.CodigoCliente, dbo.PedidosVenda.LojaCliente, dbo.FilialEntidadeGrVenda.UF, dbo.PedidosVenda.DataCriacao, dbo.PedidosVenda.STATUS, dbo.PedidosVendaCab.PvTipo HAVING (((dbo.PedidosVenda.STATUS) Is Null)) ORDER BY dbo.PedidosVenda.DataCriacao DESC"
 const QUERY_PEDIDOS_DE_VENDA_A_FATURAR_DET = "SELECT dbo.PedidosVenda.PedidoID, dbo.PedidosVenda.PedidoItemID, dbo.PedidosVenda.CodigoProduto, dbo.Produtos.Produto, dbo.PedidosVenda.QtdeVendida, dbo.PedidosVenda.PrecoUnitarioLiquido, dbo.PedidosVenda.VlrDesconto, dbo.PedidosVenda.PrecoTotal, dbo.PedidosVenda.TES FROM dbo.PedidosVenda INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.PedidosVenda.Filial = dbo.FilialEntidadeGrVenda.M0_CODFIL INNER JOIN dbo.Produtos on dbo.Produtos.ProdId = dbo.PedidosVenda.CodigoProduto WHERE ( dbo.PedidosVenda.CodigoTotvs Is Null and NASAJON = 'S' and dbo.PedidosVenda.STATUS Is Null ) ORDER BY dbo.PedidosVenda.PedidoID DESC, dbo.PedidosVenda.PedidoItemID ASC"
 const QUERY_EMPRESA_NO_NASAJON = "select empresa from ns.empresas where codigo = ?"
 const QUERY_CLIENTE_NO_NASAJON = "select pessoa from ns.pessoas where chavecnpj = ?"
