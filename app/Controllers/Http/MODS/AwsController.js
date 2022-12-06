@@ -1,6 +1,7 @@
 "use strict";
 const Database = use("Database");
 const Drive = use("Drive");
+const jwt = require("jsonwebtoken");
 const { seeToken } = require('../../../Services/jwtServices')
 const { spawn } = require('child_process');
 const Helpers = use("Helpers");
@@ -241,6 +242,15 @@ class AwsController {
       response.status(400).send({
         error: err.message
       })
+    }
+  }
+
+  async temp({ response }) {
+    try {
+
+      response.status(200).send()
+    } catch (err) {
+      response.status(400).send({ message: err.message })
     }
   }
 }

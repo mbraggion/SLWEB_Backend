@@ -7,6 +7,7 @@ const Route = use("Route");
 Route.get("/", function () {
   return { message: "API Funcionando!" };
 })
+Route.get("/temp", "MODS/AwsController.temp")
 
 //Integração com API TOTVS
 Route.get("/tel/update/:filial/:equicod", "MODS/Sl2TelController.Update");
@@ -105,6 +106,7 @@ Route.put("/equip/requests/admin", "WEB/EquipRequestController.SistemOptions").m
 
 //Franquia
 Route.get("/administrar/franquia", "ADMIN/FranquiasController.Show").middleware(['jwt', 'vld:1,1']);
+Route.get("/administrar/franquia/:grpven", "ADMIN/FranquiasController.See").middleware(['jwt', 'vld:1,1']);
 Route.post("/administrar/franquia", "ADMIN/FranquiasController.Store").middleware(['jwt', 'vld:1,1']);
 
 //Formulário de futuros franqueados
