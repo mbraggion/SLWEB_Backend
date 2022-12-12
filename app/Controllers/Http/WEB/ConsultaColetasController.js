@@ -350,12 +350,14 @@ class ConsultaColetasController {
         ["C.I"]: FDAnt.filter(w => w.Sel === f.Sel)[0] ? FDAnt.filter(w => w.Sel === f.Sel)[0]["C.F"] : 0
       }))
 
+      const produtos = await Database
+      .select('Produto', 'ProdId')
+      .from('dbo.Produtos')
+
       faturar = faturar.map(f => {
         return {
           ...f,
-          Produto: String(f.ProdId) === '12708'
-            ? 'DIFERENCA DE MINIMO (DOSE FRANQUEADO)'
-            : PVPROD.filter(PD => String(PD.ProdId) === String(f.ProdId))[0].Produto
+          Produto: produtos.filter(PD => String(PD.ProdId) === String(f.ProdId))[0].Produto
         }
       })
 

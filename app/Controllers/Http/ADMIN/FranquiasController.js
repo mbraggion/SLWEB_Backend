@@ -77,6 +77,7 @@ class FranquiasController {
           EmiteNF: FEGV[0].EmiteNF,
           Limite: FEGV[0].LimiteCredito,
           LimiteExtra: FEGV[0].LimExtraCredito,
+          DtExtraConcedido: FEGV[0].DtExtraCredito,
           MinCompra: FEGV[0].VlrMinCompra,
           Confiavel: FEGV[0].Confiavel,
           PodeRetirar: FEGV[0].Retira,
@@ -257,7 +258,7 @@ class FranquiasController {
 module.exports = FranquiasController;
 
 const QUERY_TODAS_FILIAIS = "select A1_GRPVEN, A1_COD, M0_CODFIL, GrupoVenda, M0_FILIAL, M0_CGC, NREDUZ, Inatv, Consultor, UF, DtCadastro from dbo.FilialEntidadeGrVenda where A1_GRPVEN <> '990201' and A1_GRPVEN <> '990203' and A1_GRPVEN <> '000000' order by M0_CODFIL"
-const QUERY_FEGV = "select Consultor, Inatv, [STATUS], A1_COD, MaxLeads, EmiteNF, LimiteCredito, LimExtraCredito, VlrMinCompra, Confiavel, Retira, CondPag from dbo.FilialEntidadeGrVenda where A1_GRPVEN = ?"
+const QUERY_FEGV = "select Consultor, Inatv, [STATUS], A1_COD, MaxLeads, EmiteNF, LimiteCredito, LimExtraCredito, DtExtraCredito, VlrMinCompra, Confiavel, Retira, CondPag from dbo.FilialEntidadeGrVenda where A1_GRPVEN = ?"
 const QUERY_FEE = "select Razão_Social, A1_SATIV1, CNPJ, Email, DDD, Fone, Logradouro, Número, Complemento, Bairro, CEP, Município, UF, TPessoa from dbo.Cliente where A1_COD = ? and GrpVen = ?"
 const QUERY_CLIENTES_DIST = "select ClienteStatus as Status, COUNT(ClienteStatus) as Qtd from dbo.Cliente where GrpVen = ? group by ClienteStatus"
 const QUERY_EQUIPAMENTOS = "select 'Max' as PdvStatus, COUNT(EquiCod) as Qtd from dbo.Equipamento where GrpVen = ? union select P.PdvStatus as E, COUNT(*) as Qtd from dbo.Equipamento as E left join ( SELECT dbo.PontoVenda.EquiCod, dbo.PontoVenda.PdvStatus, dbo.PontoVenda.DepId, dbo.Cliente.Nome_Fantasia, dbo.Cliente.CNPJss, dbo.PontoVenda.AnxId, dbo.PontoVenda.PdvId, dbo.Cliente.CNPJn, dbo.Deposito.DepNome FROM ( ( dbo.Cliente INNER JOIN dbo.Contrato ON (dbo.Cliente.CNPJ = dbo.Contrato.CNPJ) AND (dbo.Cliente.GrpVen = dbo.Contrato.GrpVen) ) INNER JOIN dbo.Anexos ON (dbo.Contrato.CNPJ = dbo.Anexos.CNPJ) AND (dbo.Contrato.ConId = dbo.Anexos.ConId) AND (dbo.Contrato.GrpVen = dbo.Anexos.GrpVen) ) INNER JOIN dbo.PontoVenda ON (dbo.Anexos.AnxId = dbo.PontoVenda.AnxId) AND (dbo.Anexos.GrpVen = dbo.PontoVenda.GrpVen) INNER JOIN dbo.Deposito on dbo.Deposito.DepId = dbo.PontoVenda.DepId and dbo.Deposito.GrpVen = dbo.PontoVenda.GrpVen WHERE ( ((dbo.Cliente.GrpVen) = ?) AND ((dbo.PontoVenda.PdvStatus) = 'A') ) ) as P on E.EquiCod = P.EquiCod where E.GrpVen = ? group by P.PdvStatus"

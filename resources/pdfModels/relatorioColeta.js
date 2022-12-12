@@ -294,8 +294,7 @@ exports.PDFGen = (FD, FM, PDV, PROD, Faturar) => {
         margin: [0, 16, 0, 8],
       },
       whiteText: {
-        color: '#FFF',
-        whiteSpace
+        color: '#FFF'
       }
     },
   };
