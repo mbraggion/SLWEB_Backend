@@ -106,7 +106,8 @@ Route.put("/equip/requests/admin", "WEB/EquipRequestController.SistemOptions").m
 
 //Franquia
 Route.get("/administrar/franquia", "ADMIN/FranquiasController.Show").middleware(['jwt', 'vld:1,1']);
-Route.get("/administrar/franquia/:grpven", "ADMIN/FranquiasController.See").middleware(['jwt', 'vld:1,1']);
+Route.get("/administrar/franquia/:grpven/:res", "ADMIN/FranquiasController.See").middleware(['jwt', 'vld:1,1']);
+Route.put("/administrar/franquia/:grpven/:res", "ADMIN/FranquiasController.Update").middleware(['jwt', 'vld:1,1']);
 Route.post("/administrar/franquia", "ADMIN/FranquiasController.Store").middleware(['jwt', 'vld:1,1']);
 
 //Formulário de futuros franqueados

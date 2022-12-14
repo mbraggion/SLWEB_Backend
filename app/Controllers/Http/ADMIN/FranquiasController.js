@@ -24,78 +24,102 @@ class FranquiasController {
 
   async See({ request, response, params }) {
     const grpven = params.grpven
+    const res = params.res
 
     try {
-      const FEGV = await Database.raw(QUERY_FEGV, [grpven])
 
-      if (FEGV.length === 0) throw new Error('Franquia não consta em FEGV')
+      switch (res) {
+        case 'dados':
+          const FEGV = await Database.raw(QUERY_FEGV, [grpven])
 
-      const FranqEEmpresa = await Database.raw(QUERY_FEE, [FEGV[0].A1_COD, grpven])
+          if (FEGV.length === 0) throw new Error('Franquia não consta em FEGV')
 
-      const Franqueados = FranqEEmpresa.filter(f => f.A1_SATIV1 === '000113' && f.TPessoa === 'F')
-      const Empresa = FranqEEmpresa.filter(f => f.A1_SATIV1 === '000113' && f.TPessoa === 'J')
+          const FranqEEmpresa = await Database.raw(QUERY_FEE, [FEGV[0].A1_COD, grpven])
 
-      const PF = Franqueados.map(f => ({
-        Nome: f.Razão_Social,
-        CPF: f.CNPJ,
-        Email: f.Email,
-        Telefone: `${f.DDD}${f.Fone}`,
-        Logradouro: f.Logradouro,
-        Numero: f.Número,
-        Complemento: f.Complemento,
-        Bairro: f.Bairro,
-        CEP: f.CEP,
-        Municipio: f.Município,
-        UF: f.UF
-      }))
+          const Franqueados = FranqEEmpresa.filter(f => f.A1_SATIV1 === '000113' && f.TPessoa === 'F')
+          const Empresa = FranqEEmpresa.filter(f => f.A1_SATIV1 === '000113' && f.TPessoa === 'J')
 
-      const PJ = Empresa.map(e => ({
-        RazaoSocial: e.Razão_Social,
-        CNPJ: e.CNPJ,
-        Email: e.Email,
-        Telefone: `${e.DDD}${e.Fone}`,
-        Logradouro: e.Logradouro,
-        Numero: e.Número,
-        Complemento: e.Complemento,
-        Bairro: e.Bairro,
-        CEP: e.CEP,
-        Municipio: e.Município,
-        UF: e.UF
-      }))
+          const PF = Franqueados.map(f => ({
+            Nome: f.Razão_Social,
+            CPF: f.CNPJ,
+            Email: f.Email,
+            Telefone: `${f.DDD}${f.Fone}`,
+            Logradouro: f.Logradouro,
+            Numero: f.Número,
+            Complemento: f.Complemento,
+            Bairro: f.Bairro,
+            CEP: f.CEP,
+            Municipio: f.Município,
+            UF: f.UF
+          }))
 
-      const DIST_CLI = await Database.raw(QUERY_CLIENTES_DIST, [grpven])
+          const PJ = Empresa.map(e => ({
+            RazaoSocial: e.Razão_Social,
+            CNPJ: e.CNPJ,
+            Email: e.Email,
+            Telefone: `${e.DDD}${e.Fone}`,
+            Logradouro: e.Logradouro,
+            Numero: e.Número,
+            Complemento: e.Complemento,
+            Bairro: e.Bairro,
+            CEP: e.CEP,
+            Municipio: e.Município,
+            UF: e.UF
+          }))
 
-      let DIST_EQ = await Database.raw(QUERY_EQUIPAMENTOS, [grpven, grpven, grpven])
-      let LEIT_S = await Database.raw(QUERY_LEIT_STATUS, [grpven])
+          const DIST_CLI = await Database.raw(QUERY_CLIENTES_DIST, [grpven])
 
-      const bloqueado = await Database.raw(QUERY_BLOQUEADO, [grpven])
+          let DIST_EQ = await Database.raw(QUERY_EQUIPAMENTOS, [grpven, grpven, grpven])
+          let LEIT_S = await Database.raw(QUERY_LEIT_STATUS, [grpven])
 
-      response.status(200).send({
-        PF,
-        PJ,
-        FIN: {
-          EmiteNF: FEGV[0].EmiteNF,
-          Limite: FEGV[0].LimiteCredito,
-          LimiteExtra: FEGV[0].LimExtraCredito,
-          DtExtraConcedido: FEGV[0].DtExtraCredito,
-          MinCompra: FEGV[0].VlrMinCompra,
-          Confiavel: FEGV[0].Confiavel,
-          PodeRetirar: FEGV[0].Retira,
-          Bloqueado: bloqueado[0].Bloqueado,
-          CondicaoPagPadrao: FEGV[0].CondPag
-        },
-        CAR: {
-          Clientes: DIST_CLI,
-          LimiteLeads: FEGV[0].MaxLeads,
-          AtivosStatus: LEIT_S,
-          AtivosDist: DIST_EQ
-        },
-      });
+          const bloqueado = await Database.raw(QUERY_BLOQUEADO, [grpven])
+
+          response.status(200).send({
+            PF,
+            PJ,
+            FIN: {
+              EmiteNF: FEGV[0].EmiteNF,
+              Limite: FEGV[0].LimiteCredito,
+              LimiteExtra: FEGV[0].LimExtraCredito,
+              DtExtraConcedido: FEGV[0].DtExtraCredito,
+              MinCompra: FEGV[0].VlrMinCompra,
+              Confiavel: FEGV[0].Confiavel,
+              PodeRetirar: FEGV[0].Retira,
+              Bloqueado: bloqueado[0].Bloqueado,
+              CondicaoPagPadrao: FEGV[0].CondPag
+            },
+            CAR: {
+              Clientes: DIST_CLI,
+              LimiteLeads: FEGV[0].MaxLeads,
+              AtivosStatus: LEIT_S,
+              AtivosDist: DIST_EQ
+            },
+          });
+
+          break;
+        case 'acoes':
+          const limite = await Database
+            .select('LimiteCredito', 'LimExtraCredito', 'DtExtraCredito')
+            .from('dbo.FilialEntidadeGrVenda')
+            .where({
+              A1_GRPVEN: grpven
+            })
+
+          response.status(200).send({
+            Limite: limite[0].LimiteCredito,
+            LimiteExtra: limite[0].LimExtraCredito,
+            ValidadeLimiteExtra: limite[0].DtExtraCredito,
+          });
+          break;
+        default:
+          throw new Error('parametros inválidos')
+      }
+
     } catch (err) {
       response.status(400).send();
       logger.error({
         token: null,
-        params: null,
+        params: params,
         payload: request.body,
         err: err.message,
         handler: 'FranquiasController.See',
@@ -250,6 +274,54 @@ class FranquiasController {
         payload: request.body,
         err: err.message,
         handler: 'FranquiasController.Store',
+      })
+    }
+  }
+
+  async Update({ request, response, params }) {
+    const grpven = params.grpven
+    const res = params.res
+    const { payload } = request.only(['payload'])
+
+    try {
+      switch (res) {
+
+        case 'limite':
+          await Database.table("dbo.FilialEntidadeGrVenda")
+            .where({
+              A1_GRPVEN: grpven
+            })
+            .update({
+              LimiteCredito: payload.Limite === null || String(payload.Limite).trim() === '' || typeof payload.Limite == 'undefinde' ? 0 : payload.Limite,
+            });
+
+          response.status(200).send()
+          break;
+        case 'limiteextra':
+          await Database.table("dbo.FilialEntidadeGrVenda")
+            .where({
+              A1_GRPVEN: grpven
+            })
+            .update({
+              LimExtraCredito: payload.LimiteExtra === null || String(payload.LimiteExtra).trim() === '' || typeof payload.LimiteExtra == 'undefinde' ? 0 : payload.LimiteExtra,
+              DtExtraCredito: payload.ValidadeLimiteExtra
+            });
+
+          response.status(200).send()
+          break;
+        default:
+          throw new Error('parametros inválidos')
+      }
+
+
+    } catch (err) {
+      response.status(400).send();
+      logger.error({
+        token: null,
+        params: params,
+        payload: request.body,
+        err: err.message,
+        handler: 'FranquiasController.Update',
       })
     }
   }
