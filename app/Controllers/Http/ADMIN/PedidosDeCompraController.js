@@ -72,7 +72,8 @@ class PedidosDeCompra {
         })
 
       if (jaFoiProcessado.length < 1) {
-        throw new Error('pedido já processado')
+        response.status(400).send('pedido já processado')
+        return
       }
 
       //fazer update aqui

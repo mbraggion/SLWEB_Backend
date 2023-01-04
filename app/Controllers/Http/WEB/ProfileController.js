@@ -104,7 +104,8 @@ class ProfileController {
     const { email } = request.only(["email"]);
 
     if (email === "" || email === null || typeof email == "undefined") {
-      throw Error;
+      response.status(400).send('Email inválido')
+      return
     }
 
     try {

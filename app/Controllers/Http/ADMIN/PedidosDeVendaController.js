@@ -82,7 +82,8 @@ class PedidosDeVenda {
 
       // o pedido não pode ter sido faturado ainda(status !== 1), se sim, lançar erro
       if (pedido.rows.length > 0 && pedido.rows[0].status === 1) {
-        throw new Error('Nota já emitida');
+        response.status(400).send('Nota já emitida')
+        return
       } else if (pedido.rows.length > 0) {
         // atualizar com status 4 no NSJ
         await Database.connection('pg').raw('update swvix.pedido set status = 4 where num_externo = ?', [PedidoID])
@@ -97,7 +98,6 @@ class PedidosDeVenda {
       response.status(200).send()
     } catch (err) {
       response.status(400).send()
-      console.log(err.message)
       logger.error({
         token: token,
         params: null,
@@ -194,17 +194,18 @@ class PedidosDeVenda {
         .raw(QUERY_PEDIDO_NO_NASAJON, [PedidoID])
 
       if (pedido.rows.length > 0 && pedido.rows[0].status === 1) {
-        throw new Error('Nota já emitida');
+        response.status(400).send('Nota já emitida')
+        return
       } else if (pedido.rows.length > 0) {
         await Database.connection('pg').raw('update swvix.pedido set status = 4, num_externo = ? where num_externo = ?', [`${PedidoID}E`, PedidoID])
       } else {
-        throw new Error('Pedido não está no nasajon')
+        response.status(400).send('Pedido não está no nasajon')
+        return
       }
 
       response.status(200).send()
     } catch (err) {
       response.status(400).send()
-      console.log(err.message)
       logger.error({
         token: token,
         params: null,
@@ -215,7 +216,7 @@ class PedidosDeVenda {
     }
   }
 
-  // NÃO TESTADO
+  // TESTADO
   async ReissueOrder({ request, response }) {
     const token = request.header("authorization");
     const { PedidoID } = request.only(['PedidoID'])
@@ -228,11 +229,13 @@ class PedidosDeVenda {
         .raw(QUERY_PEDIDO_NO_NASAJON, [PedidoID])
 
       if (pedido.rows.length > 0 && pedido.rows[0].status === 1) {
-        throw new Error('Nota já emitida');
+        response.status(400).send('Nota já emitida')
+        return
       } else if (pedido.rows.length > 0) {
-        await Database.connection('pg').raw('update swvix.pedido set status = 3, processado = 0 where num_externo = ?', [PedidoID])
+        await Database.connection('pg').raw('update swvix.pedido set status = 3, processado = false where num_externo = ?', [PedidoID])
       } else {
-        throw new Error('Pedido não está no nasajon')
+        response.status(400).send('Pedido não está no nasajon')
+        return
       }
 
       response.status(200).send()

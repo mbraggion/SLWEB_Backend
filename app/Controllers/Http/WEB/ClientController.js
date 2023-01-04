@@ -60,8 +60,12 @@ class ClientController {
       }
 
       if (Tipo === "J" && ClienteValido) {
-        const response = await axios.get(`https://receitaws.com.br/v1/cnpj/${CNPJ}`)
-        receitawsData = response.data
+        try {
+          const response = await axios.get(`https://receitaws.com.br/v1/cnpj/${CNPJ}`)
+          receitawsData = response.data
+        } catch (err) {
+          receitawsData = null
+        }
       }
 
       response.status(200).send({
@@ -260,7 +264,8 @@ class ClientController {
         });
 
       if (hasTransaction.length > 0) {
-        throw new Error('Cliente possui transações associadas.');
+        response.status(400).send('Cliente possui transações associadas')
+        return
       }
 
       const hasAnnex = await Database.select("CNPJ")
@@ -271,7 +276,8 @@ class ClientController {
         });
 
       if (hasAnnex.length > 0) {
-        throw new Error('Cliente possui anexos associados.');
+        response.status(400).send('Cliente possui anexos associados')
+        return
       }
 
       const hasPdv = await Database.select("CNPJ")
@@ -282,7 +288,8 @@ class ClientController {
         });
 
       if (hasPdv.length > 0) {
-        throw new Error('Cliente possui PDVs associados.');
+        response.status(400).send('Cliente possui PDVs associados')
+        return
       }
 
       //se passar nos testes, pode deletar cliente, contrato, anexo, PdV

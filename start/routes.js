@@ -7,7 +7,7 @@ const Route = use("Route");
 Route.get("/", function () {
   return { message: "API Funcionando!" };
 })
-Route.get("/temp", "MODS/AwsController.temp")
+Route.get("/temp/:dl", "MODS/AwsController.temp")
 
 //Integração com API TOTVS
 Route.get("/tel/update/:filial/:equicod", "MODS/Sl2TelController.Update");
@@ -94,7 +94,7 @@ Route.get("/equip/requests/own", "WEB/EquipRequestController.Show").middleware([
 Route.get("/equip/requests/adresses", "WEB/EquipRequestController.See").middleware(['jwt', 'vld:0,1']); //retorna endereços, máquinas, configurações
 Route.get("/equip/requests/default/:id", "WEB/EquipRequestController.SearchDefaultConfig").middleware(['jwt', 'vld:0,1']); //busca as configurações padrão da máquina
 Route.get("/equip/requests/retrive/:osid", "WEB/EquipRequestController.RetriveOS").middleware(['jwt', 'vld:0,1']); //retorna o PDF da OS
-Route.get("/equip/payment/card/information", "WEB/EquipRequestController.GetCardInformation").middleware(['jwt', 'vld:0,1']); //retorna informações do sistema de pagamento cartão
+Route.get("/equip/payment/information/:type", "WEB/EquipRequestController.GetInformation").middleware(['jwt', 'vld:0,1']); //retorna informações do sistema de pagamento cartão
 Route.post("/equip/requests", "WEB/EquipRequestController.Store").middleware(['jwt', 'vld:0,1']); //Solicita maquina
 
 //Administração das Solicitações de Equipamento
@@ -220,3 +220,10 @@ Route.put('/dre', 'WEB/DreController.UpdateDRE').middleware(['jwt', 'vld:0,1']);
 Route.put('/dov', 'WEB/DreController.UpdateDOV').middleware(['jwt', 'vld:0,1']);
 Route.get('/dre/excel/baseroy/:ano/:mes', 'WEB/DreController.GenExcelBaseRoyalties').middleware(['jwt', 'vld:0,1']);
 Route.get('/dre/excel/dre/:ano/:mes', 'WEB/DreController.GenExcelDRE').middleware(['jwt', 'vld:0,1']);
+
+
+// SLRaspy
+Route.get('/raspy', 'WEB/SLRaspyController.Show').middleware(['jwt', 'vld:0,1']);
+Route.get('/raspy/excel/:anxid/:p1/:p2', 'WEB/SLRaspyController.GerarExcel').middleware(['jwt', 'vld:0,1']);
+Route.get('/raspy/:anxid', 'WEB/SLRaspyController.Leituras').middleware(['jwt', 'vld:0,1']);
+Route.get('/raspy/:anxid/:p1/:p2', 'WEB/SLRaspyController.See').middleware(['jwt', 'vld:0,1']);

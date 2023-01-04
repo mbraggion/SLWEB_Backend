@@ -25,7 +25,8 @@ class CompartilhamentoController {
 
       //verificar permissão do usuário
       if (await somehowVerifyIfUserShouldHaveAccessToFileOrDirectory(folder, verified)) {
-        throw new Error('Acesso bloqueado')
+        response.status(400).send('Acesso bloqueado')
+        return
       }
 
       // verificar se houve solicitação de uma pasta em especifico
@@ -152,7 +153,8 @@ class CompartilhamentoController {
 
       //verificar permissão do usuário
       if (await somehowVerifyIfUserShouldHaveAccessToFileOrDirectory(filePath, verified)) {
-        throw new Error('Acesso bloqueado')
+        response.status(400).send('Acesso bloqueado')
+        return
       }
 
       //pego a raiz dos arquivos
@@ -189,7 +191,8 @@ class CompartilhamentoController {
 
       //verificar se o cara pode fazer upload
       if (await somehowVerifyIfUserShouldHaveAccessToFileOrDirectory(targetFolder, verified)) {
-        throw new Error('Acesso bloqueado')
+        response.status(400).send('Acesso bloqueado')
+        return
       }
 
       const root = await Database
@@ -239,7 +242,8 @@ class CompartilhamentoController {
 
       //verificar se o cara é usuário sistema
       if (verified.role !== "Sistema") {
-        throw new Error('Usuário não permitido')
+        response.status(400).send('Usuário não permitido')
+        return
       }
 
       //retornar a lista das tela indexadas e o TipoOper
@@ -303,12 +307,14 @@ class CompartilhamentoController {
 
       //verificar permissão do usuário
       if (await somehowVerifyIfUserShouldHaveAccessToFileOrDirectory(path, verified)) {
-        throw new Error('Acesso bloqueado')
+        response.status(400).send('Acesso bloqueado')
+        return
       }
 
       //verificar se é sistema
       if (verified.role !== "Sistema") {
-        throw new Error('Usuário não permitido')
+        response.status(400).send('Usuário não permitido')
+        return
       }
 
       //fazer update
@@ -342,7 +348,8 @@ class CompartilhamentoController {
 
       //verificar permissão do usuário
       if (await somehowVerifyIfUserShouldHaveAccessToFileOrDirectory(path, verified)) {
-        throw new Error('Acesso bloqueado')
+        response.status(400).send('Acesso bloqueado')
+        return
       }
 
       const root = await Database
@@ -381,7 +388,8 @@ class CompartilhamentoController {
 
       //verificar permissão do usuário
       if (await somehowVerifyIfUserShouldHaveAccessToFileOrDirectory(filepath, verified)) {
-        throw new Error('Acesso bloqueado')
+        response.status(400).send('Acesso bloqueado')
+        return
       }
 
       let root = await Database
@@ -431,7 +439,8 @@ class CompartilhamentoController {
 
       //verificar permissão do usuário
       if (await somehowVerifyIfUserShouldHaveAccessToFileOrDirectory(dirName, verified)) {
-        throw new Error('Acesso bloqueado')
+        response.status(400).send('Acesso bloqueado')
+        return
       }
 
       const root = await Database
@@ -469,7 +478,8 @@ class CompartilhamentoController {
 
       //verificar permissão do usuário
       if (await somehowVerifyIfUserShouldHaveAccessToFileOrDirectory(currPath, verified)) {
-        throw new Error('Acesso bloqueado')
+        response.status(400).send('Acesso bloqueado')
+        return
       }
 
       const root = await Database
@@ -506,7 +516,8 @@ class CompartilhamentoController {
 
       //verificar permissão do usuário
       if (await somehowVerifyIfUserShouldHaveAccessToFileOrDirectory(currPath, verified)) {
-        throw new Error('Acesso bloqueado')
+        response.status(400).send('Acesso bloqueado')
+        return
       }
 
       let root = await Database

@@ -2,9 +2,25 @@
 const Database = use("Database");
 const Drive = use("Drive");
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
 const { seeToken } = require('../../../Services/jwtServices')
 const { spawn } = require('child_process');
 const Helpers = use("Helpers");
+const QRCode = require('qrcode');
+const { joinImages } = require('join-images')
+const PdfPrinter = require("pdfmake");
+const { PDFGen } = require('../../../../resources/pdfModels/loteQRCode')
+
+var fonts = {
+  Roboto: {
+    normal: Helpers.resourcesPath("fonts/OpenSans-Regular.ttf"),
+    bold: Helpers.resourcesPath("fonts/OpenSans-Bold.ttf"),
+    italics: Helpers.resourcesPath("fonts/OpenSans-RegularItalic.ttf"),
+    bolditalics: Helpers.resourcesPath("fonts/OpenSans-BoldItalic.ttf"),
+  },
+};
+
+const printer = new PdfPrinter(fonts);
 
 const logger = require("../../../../dump/index")
 
@@ -245,12 +261,60 @@ class AwsController {
     }
   }
 
-  async temp({ response }) {
-    try {
+  async temp({ response, params }) {
+    const DL = params.dl
 
-      response.status(200).send()
+    try {
+      const arrayWithEquipNumbers = await Database
+        .select('N1_CHAPA')
+        .from('SLCafes.SLAPLIC.dbo.SN1SZ2_QRCode')
+        .map(item => item.N1_CHAPA)
+
+      let savedFiles = [[]]
+      let savedEqs = [[]]
+
+      const qrsPorLinha = 5
+      
+      // const finalPathName = Helpers.publicPath(`/tmp/qrcode_auto_full.png`);
+      const finalPathName = Helpers.publicPath(`/tmp/qrcode_auto_full.pdf`);
+
+      // gero um QR code pra cada numero de ativo
+      for (const eq of arrayWithEquipNumbers) {
+        let eqFixed = String(eq).trim()
+        const filename = Helpers.publicPath(`/tmp/qrcode_auto_${eqFixed}.png`)
+
+        await QRCode.toFile(
+          filename,
+          eqFixed,
+          {
+            margin: 1
+          }
+        )
+
+        if (savedFiles[savedFiles.length - 1].length < qrsPorLinha) {
+          savedFiles[savedFiles.length - 1].push(filename)
+          savedEqs[savedEqs.length - 1].push(eqFixed)
+        } else {
+          savedFiles.push([filename])
+          savedEqs.push([eqFixed])
+        }
+      }
+
+      const PDFModel = PDFGen(savedFiles, savedEqs, qrsPorLinha);
+
+      var pdfDoc = printer.createPdfKitDocument(PDFModel);
+      pdfDoc.pipe(fs.createWriteStream(finalPathName));
+      pdfDoc.end();
+
+      for (const linha of savedFiles) {
+        for(const index in linha){
+          await Drive.delete(linha[index])
+        }
+      }
+
+      response.status(200).attachment(finalPathName, 'QRCODE.png')
     } catch (err) {
-      response.status(400).send({ message: err.message })
+      response.status(400).send({ message: err })
     }
   }
 }

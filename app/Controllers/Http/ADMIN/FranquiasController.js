@@ -32,7 +32,10 @@ class FranquiasController {
         case 'dados':
           const FEGV = await Database.raw(QUERY_FEGV, [grpven])
 
-          if (FEGV.length === 0) throw new Error('Franquia não consta em FEGV')
+          if (FEGV.length === 0) {
+            response.status(400).send('Franquia não consta em FEGV')
+            return
+          }
 
           const FranqEEmpresa = await Database.raw(QUERY_FEE, [FEGV[0].A1_COD, grpven])
 
@@ -112,7 +115,8 @@ class FranquiasController {
           });
           break;
         default:
-          throw new Error('parametros inválidos')
+          response.status(400).send('parametros inválidos')
+          return
       }
 
     } catch (err) {
@@ -310,7 +314,8 @@ class FranquiasController {
           response.status(200).send()
           break;
         default:
-          throw new Error('parametros inválidos')
+          response.status(400).send('parametros inválidos')
+          return
       }
 
 

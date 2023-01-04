@@ -161,6 +161,7 @@ class InventoryController {
         InvZerado: zerados
       })
     } catch (err) {
+      console.log(err.message)
       response.status(400).send();
       logger.error({
         token: token,
@@ -190,7 +191,8 @@ class InventoryController {
         })
 
       if (invCab.length > 0) {
-        throw new Error('Inventário já existe')
+        response.status(400).send('Inventário já existe')
+        return
       }
 
       let proxInvId = null
@@ -244,7 +246,8 @@ class InventoryController {
         })
 
       if (invCab[0].InvConcluido === 'S') {
-        throw new Error('Inventário já concluído')
+        response.status(400).send('Inventário já concluído')
+        return
       }
 
       await Database.table("dbo.InventarioDet")
@@ -290,7 +293,8 @@ class InventoryController {
         })
 
       if (invCab[0].InvConcluido === 'S') {
-        throw new Error('Inventário já concluído')
+        response.status(400).send('Inventário já concluído')
+        return
       }
 
       await Database
@@ -353,8 +357,6 @@ const calcAntAmount = (act, ant) => {
 }
 
 const queryInvDet = async (grpven, depid, year, month, user_code, invid) => {
-  console.log({ grpven, depid, year, month, user_code, invid })
-
   let proc = await Database.raw(QUERY_PROC_GEN_INV, [grpven, depid, year, month, user_code, invid])
 
   // coloco os 'INVENTÁRIO INICIAL' e 'INVENTÁRIO FINAL' no inicio e fim do array respectivamente, se não da doidera...
@@ -368,7 +370,11 @@ const queryInvDet = async (grpven, depid, year, month, user_code, invid) => {
 
   for (let p in proc) {
     // só guardo a movimentação do que não for DOSE ou ROYALTIES
-    if (!String(proc[p].Produto).toUpperCase().startsWith('DOSE')) {
+    if (
+      !String(proc[p].Produto).toUpperCase().startsWith('DOSE') &&
+      !String(proc[p].Produto).toUpperCase().startsWith('DIFERENCA') &&
+      !String(proc[p].Produto).toUpperCase().startsWith('MAQUINA')
+    ) {
       procMod[proc[p].ProdId] = {
         ProdId: proc[p].ProdId,
         Produto: proc[p].Produto,

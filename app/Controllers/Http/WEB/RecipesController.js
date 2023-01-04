@@ -51,7 +51,8 @@ class RecipesController {
       )
 
       if (rec.length === 0) {
-        throw new Error('receita não tem detalhes')
+        response.status(400).send('Receita não tem detalhes')
+        return
       }
 
       rec = {

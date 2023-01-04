@@ -93,14 +93,16 @@ class ApontaConsumoController {
 
       // verificar se o pdv tem depid
       if (DepId === null) {
-        throw new Error('ID do depósito indefinido')
+        response.status(400).send('ID do depósito indefinido')
+        return
       }
 
       DepId = Number(DepId)
 
       // verificar se o cara não está tentando lançar movimentação no depósito 1
       if (DepId === 1) {
-        throw new Error('Não é possivel fazer apontamento de consumo no depósito 1')
+        response.status(400).send('Não é possivel fazer apontamento de consumo no depósito 1')
+        return
       }
 
       let DOC = null
@@ -175,7 +177,8 @@ class ApontaConsumoController {
 
       // verificar se o pdv tem depid
       if (DepId === null) {
-        throw new Error('ID do depósito indefinido')
+        response.status(400).send('ID do depósito indefinido')
+        return
       }
 
       DepId = Number(DepId)

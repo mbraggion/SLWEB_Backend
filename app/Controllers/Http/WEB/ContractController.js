@@ -80,7 +80,10 @@ class ContractController {
               .from('dbo.Cliente')
               .where({ CNPJ: CNPJ })
 
-            if (info.length === 0) throw new Error('Cliente para anexo não encontrado')
+            if (info.length === 0) {
+              response.status(400).send('Cliente para anexo não encontrado')
+              return
+            }
 
             newAnx = {
               GrpVen: verified.grpven,
@@ -151,7 +154,8 @@ class ContractController {
             }
           });
         default:
-          throw new Error('entidade para query não identificada')
+          response.status(400).send('entidade para query não identificada')
+          return
       }
     } catch (err) {
       response.status(400).send();
@@ -358,7 +362,8 @@ class ContractController {
 
           return response.status(200).send();
         default:
-          throw new Error('entidade para query não identificada')
+          response.status(400).send('entidade para query não identificada')
+          return
       }
     } catch (err) {
       response.status(400).send();
@@ -485,7 +490,8 @@ class ContractController {
           })
 
         if (usado.length > 0) {
-          throw new Error('Contrato está em uso')
+          response.status(400).send('Contrato está em uso')
+          return
         } else {
           await Database.table("dbo.Contrato")
             .where({

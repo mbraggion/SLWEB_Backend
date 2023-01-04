@@ -171,10 +171,55 @@ class EquipRequestController {
     try {
       const verified = seeToken(token);
 
-      const requisicao = await Database.select("*")
+      let requisicao = await Database.select("*")
         .from("dbo.OSCtrl")
         .where({ GrpVen: verified.grpven })
         .orderBy("OSCId", "DESC");
+
+      requisicao = requisicao.map(req => {
+        return {
+          OSCId: req.OSCId,
+          OSTId: req.OSTId,
+          GrpVen: req.GrpVen,
+          OSCStatus: req.OSCStatus,
+          Stage: showStatus(req),
+          Responsavel: getActualActor(req),
+
+          Datas: {
+            OSCDtSolicita: req.OSCDtSolicita,
+            OSCDtPretendida: req.OSCDtPretendida,
+            OSCDtFechamento: req.OSCDtFechamento,
+          },
+          Assinaturas: {
+            OSCComDtVisualizada: req.OSCComDtVisualizada,
+            OSCComDtValidação: req.OSCComDtValidação,
+            OSCComAceite: req.OSCComAceite,
+            OSCComMotivo: req.OSCComMotivo,
+
+            OSCTecDtVisualizada: req.OSCTecDtVisualizada,
+            OSCTecDtValidação: req.OSCTecDtValidação,
+            OSCTecAceite: req.OSCTecAceite,
+            OSCTecMotivo: req.OSCTecMotivo,
+            OSCTecDtPrevisao: req.OSCTecDtPrevisao,
+
+            OSCExpDtVisualizada: req.OSCExpDtVisualizada,
+            OSCExpDtPrevisao: req.OSCExpDtPrevisao,
+          },
+          InfoEq: {
+            EquipCod: req.EquipCod,
+            SLRaspyNum: req.SLRaspyNum,
+            TelemetriaNum: req.TelemetriaNum,
+          },
+          Entrega: {
+            OSCnpjDest: req.OSCnpjDest,
+            OSCDestino: req.OSCDestino,
+            OSCEmail: req.OSCEmail,
+            OSCTelCont: req.OSCTelCont,
+            OSCcontato: req.OSCcontato,
+          },
+          OSCPDF: req.OSCPDF,
+        }
+      })
 
       response.status(200).send(requisicao);
     } catch (err) {
@@ -234,7 +279,53 @@ class EquipRequestController {
     const token = request.header("authorization");
 
     try {
-      const requisicoes = await Database.raw("select F.M0_CODFIL , O.* from dbo.OSCtrl as O inner join dbo.FilialEntidadeGrVenda as F on O.GrpVen = F.A1_GRPVEN order by OSCId DESC", [])
+      let requisicoes = await Database.raw("select F.M0_CODFIL , O.* from dbo.OSCtrl as O inner join dbo.FilialEntidadeGrVenda as F on O.GrpVen = F.A1_GRPVEN order by OSCId DESC", [])
+
+      requisicoes = requisicoes.map(req => {
+        return {
+          OSCId: req.OSCId,
+          OSTId: req.OSTId,
+          M0_CODFIL: req.M0_CODFIL,
+          GrpVen: req.GrpVen,
+          OSCStatus: req.OSCStatus,
+          Stage: showStatus(req),
+          Responsavel: getActualActor(req),
+
+          Datas: {
+            OSCDtSolicita: req.OSCDtSolicita,
+            OSCDtPretendida: req.OSCDtPretendida,
+            OSCDtFechamento: req.OSCDtFechamento,
+          },
+          Assinaturas: {
+            OSCComDtVisualizada: req.OSCComDtVisualizada,
+            OSCComDtValidação: req.OSCComDtValidação,
+            OSCComAceite: req.OSCComAceite,
+            OSCComMotivo: req.OSCComMotivo,
+
+            OSCTecDtVisualizada: req.OSCTecDtVisualizada,
+            OSCTecDtValidação: req.OSCTecDtValidação,
+            OSCTecAceite: req.OSCTecAceite,
+            OSCTecMotivo: req.OSCTecMotivo,
+            OSCTecDtPrevisao: req.OSCTecDtPrevisao,
+
+            OSCExpDtVisualizada: req.OSCExpDtVisualizada,
+            OSCExpDtPrevisao: req.OSCExpDtPrevisao,
+          },
+          InfoEq: {
+            EquipCod: req.EquipCod,
+            SLRaspyNum: req.SLRaspyNum,
+            TelemetriaNum: req.TelemetriaNum,
+          },
+          Entrega: {
+            OSCnpjDest: req.OSCnpjDest,
+            OSCDestino: req.OSCDestino,
+            OSCEmail: req.OSCEmail,
+            OSCTelCont: req.OSCTelCont,
+            OSCcontato: req.OSCcontato,
+          },
+          OSCPDF: req.OSCPDF,
+        }
+      })
 
       response.status(200).send(requisicoes);
     } catch (err) {
@@ -400,13 +491,13 @@ class EquipRequestController {
 
     try {
       const verified = seeToken(token);
-      
+
       cab = await Database.raw(CabeçalhoDaOS, [OSID])
       contenedores = await Database.raw(ContenedoresDaOS, [OSID])
       det = await Database.raw(DetalhesDaOS, [OSID])
       Dados = await Database.select("GrupoVenda", "M0_CGC", 'Email', 'M0_CODFIL')
-      .from("dbo.FilialEntidadeGrVenda")
-      .where({ A1_GRPVEN: cab[0].GrpVen });
+        .from("dbo.FilialEntidadeGrVenda")
+        .where({ A1_GRPVEN: cab[0].GrpVen });
       PathWithName = `${path}/${cab[0].OSCPDF}`
 
       const Solicitacao = {
@@ -745,6 +836,66 @@ class EquipRequestController {
               OSCDtFechamento: moment().subtract(3, "hours").toDate(),
             });
 
+          if (action === "accept") {
+            const eqInfoTec = await Database
+              .select('EquipCod', 'GrpVen')
+              .from('dbo.OSCtrl')
+              .where({
+                OSCId: OSID
+              })
+
+            // verifica se o EquiCod foi informado pela técnica
+            if (eqInfoTec[0] && eqInfoTec[0].EquipCod !== null && String(eqInfoTec[0].EquipCod).trim() !== '') {
+
+              const jaExisteEq = await Database
+                .select('*')
+                .from('dbo.Equipamento')
+                .where({
+                  EquiCod: eqInfoTec[0].EquipCod
+                })
+
+              // verifica se o EquiCod está em Equipamento
+              if (jaExisteEq.length > 0) {
+                // atualiza o registro em Equipamento
+
+                await Database
+                  .table("dbo.Equipamento")
+                  .where({
+                    EquiCod: eqInfoTec[0].EquipCod,
+                  })
+                  .update({
+                    GrpVen: eqInfoTec[0].GrpVen,
+                  });
+
+                // Inativa PDV's anteriores em PontoVenda
+                await Database
+                  .table("dbo.PontoVenda")
+                  .where({
+                    EquiCod: eqInfoTec[0].EquipCod,
+                  })
+                  .update({
+                    PdvStatus: 'I',
+                  });
+              } else {
+                // inclui o EquiCod em Equipamento
+
+                await Database.insert({
+                  GrpVen: eqInfoTec[0].GrpVen,
+                  EquiCod: eqInfoTec[0].EquipCod,
+                  EquiDesc: 'LEI SA',
+                  EquiMatr: eqInfoTec[0].EquipCod,
+                  EquiCodn: Number(eqInfoTec[0].EquipCod),
+                  EquiStatus: 'A',
+                  EquiPatrimonio: eqInfoTec[0].EquipCod,
+                  IMEI: null,
+                  EquiTipo: 'BQ'
+                }).into("dbo.Equipamento");
+              }
+            }
+
+          }
+
+
           dados = await Database.select("*")
             .from("dbo.OSCtrl")
             .where({ OSCId: OSID });
@@ -789,9 +940,9 @@ class EquipRequestController {
           OSCId: OSID,
         })
         .update({
-          EquipCod: String(EqCod).substring(0, 8),
-          SLRaspyNum: String(RaspyCod).substring(0, 50),
-          TelemetriaNum: String(TelemetriaCod).substring(0, 50),
+          EquipCod: EqCod ? String(EqCod).substring(0, 8) : null,
+          SLRaspyNum: RaspyCod ? String(RaspyCod).substring(0, 50) : null,
+          TelemetriaNum: TelemetriaCod ? String(TelemetriaCod).substring(0, 50) : null,
         });
 
       response.status(200).send()
@@ -825,7 +976,11 @@ class EquipRequestController {
               OSCStatus: "Cancelado",
               OSCDtFechamento: moment().subtract(3, "hours").toDate(),
             });
-          if (S < 1) throw Error;
+
+          if (S < 1) {
+            response.status(400).send('Não atualizado')
+            return
+          }
 
           response.status(200).send();
           break;
@@ -838,7 +993,68 @@ class EquipRequestController {
               OSCStatus: "Concluido",
               OSCDtFechamento: moment().subtract(3, "hours").toDate(),
             });
-          if (S < 1) throw Error;
+
+          const eqInfoTec = await Database
+            .select('EquipCod', 'GrpVen')
+            .from('dbo.OSCtrl')
+            .where({
+              OSCId: OSID
+            })
+
+          // verifica se o EquiCod foi informado pela técnica
+          if (eqInfoTec[0] && eqInfoTec[0].EquipCod !== null && String(eqInfoTec[0].EquipCod).trim() !== '') {
+
+            const jaExisteEq = await Database
+              .select('*')
+              .from('dbo.Equipamento')
+              .where({
+                EquiCod: eqInfoTec[0].EquipCod
+              })
+
+            // verifica se o EquiCod está em Equipamento
+            if (jaExisteEq.length > 0) {
+              // atualiza o registro em Equipamento
+
+              await Database
+                .table("dbo.Equipamento")
+                .where({
+                  EquiCod: eqInfoTec[0].EquipCod,
+                })
+                .update({
+                  GrpVen: eqInfoTec[0].GrpVen,
+                });
+
+              // Inativa PDV's anteriores em PontoVenda
+              await Database
+                .table("dbo.PontoVenda")
+                .where({
+                  EquiCod: eqInfoTec[0].EquipCod,
+                })
+                .update({
+                  PdvStatus: 'I',
+                });
+            } else {
+              // inclui o EquiCod em Equipamento
+
+              await Database.insert({
+                GrpVen: eqInfoTec[0].GrpVen,
+                EquiCod: eqInfoTec[0].EquipCod,
+                EquiDesc: 'LEI SA',
+                EquiMatr: eqInfoTec[0].EquipCod,
+                EquiCodn: Number(eqInfoTec[0].EquipCod),
+                EquiStatus: 'A',
+                EquiPatrimonio: eqInfoTec[0].EquipCod,
+                IMEI: null,
+                EquiTipo: 'BQ'
+              }).into("dbo.Equipamento");
+            }
+
+          }
+
+          if (S < 1) {
+            response.status(400).send('Não atualizado')
+            return
+          }
 
           response.status(200).send();
           break;
@@ -851,7 +1067,11 @@ class EquipRequestController {
               OSCStatus: "Ativo",
               OSCDtFechamento: null,
             });
-          if (S < 1) throw Error;
+
+          if (S < 1) {
+            response.status(400).send('Não atualizado')
+            return
+          }
 
           response.status(200).send();
           break;
@@ -866,7 +1086,11 @@ class EquipRequestController {
               OSCTecMotivo: null,
               OSCTecDtPrevisao: null,
             });
-          if (B < 1) throw Error;
+
+          if (B < 1) {
+            response.status(400).send('Não atualizado')
+            return
+          }
 
           response.status(200).send();
           break;
@@ -880,7 +1104,11 @@ class EquipRequestController {
               OSCComAceite: null,
               OSCComMotivo: null,
             });
-          if (C < 1) throw Error;
+
+          if (C < 1) {
+            response.status(400).send('Não atualizado')
+            return
+          }
 
           response.status(200).send();
           break;
@@ -892,7 +1120,11 @@ class EquipRequestController {
             .update({
               OSCExpDtPrevisao: null,
             });
-          if (E < 1) throw Error;
+
+          if (E < 1) {
+            response.status(400).send('Não atualizado')
+            return
+          }
 
           response.status(200).send();
           break;
@@ -910,29 +1142,51 @@ class EquipRequestController {
     }
   }
 
-  async GetCardInformation({ request, response }) {
+  async GetInformation({ request, response, params }) {
     const token = request.header("authorization");
+    const type = params.type
 
     try {
-      const information = await Database
-        .select('ParamTxt')
-        .from('dbo.Parametros')
-        .where({
-          GrpVen: '000000',
-          ParamId: 'INSTRUCOESCARTAO',
-        })
+      let information = ''
+      let aux
+
+      switch (type) {
+        case 'card':
+          aux = await Database
+            .select('ParamTxt')
+            .from('dbo.Parametros')
+            .where({
+              GrpVen: '000000',
+              ParamId: 'INSTRUCOESCARTAO',
+            })
+
+
+          information = aux[0].ParamTxt
+          break
+        case 'privatelabel':
+          aux = await Database
+            .select('ParamTxt')
+            .from('dbo.Parametros')
+            .where({
+              GrpVen: '000000',
+              ParamId: 'INSTRUCOESPRIVATELABEL',
+            })
+
+          information = aux[0].ParamTxt
+          break
+      }
 
       response.status(200).send({
-        Instrucoes: information[0].ParamTxt
+        Instrucoes: information
       })
     } catch (err) {
       response.status(400).send()
       logger.error({
         token: token,
-        params: null,
+        params: params,
         payload: request.body,
         err: err.message,
-        handler: 'EquipRequestController.GetCardInformation',
+        handler: 'EquipRequestController.GetInformation',
       })
     }
   }
@@ -964,4 +1218,48 @@ const ContenedoresDB2PDF = (contenedoresFromDB) => {
   })
 
   return newContenedoresSemRepeticao
+}
+
+const getActualActor = (OS) => {
+  if (OS === null) return [];
+
+  if (OS.OSCComAceite === false || OS.OSCTecAceite === false) {
+    return ["Sistema"];
+  } else if (OS.OSCComAceite === null && OS.OSCStatus === "Ativo") {
+    return ["BackOffice", "Sistema"];
+  } else if (OS.OSCTecAceite === null && OS.OSCStatus === "Ativo") {
+    return ["Técnica Pilão", "Sistema"];
+  } else if (OS.OSCExpDtPrevisao === null && OS.OSCStatus === "Ativo") {
+    return ["Expedição", "Sistema"];
+  } else if (OS.OSCExpDtPrevisao !== null && OS.OSCStatus === "Ativo") {
+    return ["Sistema"];
+  } else if (OS.OSCStatus === "Cancelado") {
+    return ["Sistema"];
+  } else if (OS.OSCStatus === "Concluido") {
+    return ["Sistema"];
+  } else {
+    return [];
+  }
+}
+
+const showStatus = (OS) => {
+  if (OS === null) return;
+
+  if (OS.OSCComAceite === false || OS.OSCTecAceite === false) {
+    return "Supervisão";
+  } else if (OS.OSCComAceite === null && OS.OSCStatus === "Ativo") {
+    return "Comercial";
+  } else if (OS.OSCTecAceite === null && OS.OSCStatus === "Ativo") {
+    return "Técnica";
+  } else if (OS.OSCExpDtPrevisao === null && OS.OSCStatus === "Ativo") {
+    return "Transporte";
+  } else if (OS.OSCExpDtPrevisao !== null && OS.OSCStatus === "Ativo") {
+    return "Entrega";
+  } else if (OS.OSCStatus === "Cancelado") {
+    return "Nenhuma";
+  } else if (OS.OSCStatus === "Concluido") {
+    return "Nenhuma";
+  } else {
+    return "Desconhecido";
+  }
 }

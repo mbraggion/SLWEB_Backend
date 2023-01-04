@@ -173,7 +173,8 @@ class LeadController {
           if (endereco.length > 0) {
             response.status(200).send(endereco);
           } else {
-            throw new Error(409);
+            response.status(409).send(409)
+            return
           }
         }
       } else if (type === "release") {

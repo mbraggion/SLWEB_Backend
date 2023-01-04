@@ -300,7 +300,8 @@ class CompraController {
 
       //verifico se o pedido tem pelo menos 1 item
       if (Items.length === 0) {
-        throw new Error('Nenhum item registrado para compra');
+        response.status(400).send('Nenhum item registrado para compra')
+        return
       }
 
       //testar se o cara tem limite
@@ -326,14 +327,16 @@ class CompraController {
         limite[0].LimiteAtual - PedidosNaoFaturados[0].Total - TotalDoPedido <
         0
       ) {
-        throw new Error('Limite insuficiente');
+        response.status(400).send('Limite insuficiente')
+        return
       }
 
       //testo se o cara ta bloqueado
       const bloqueado = await Database.raw(queryBloqueado, [verified.grpven]);
 
       if (bloqueado.length === 0 || bloqueado[0].Bloqueado === "S") {
-        throw new Error('Franqueado bloqueado');
+        response.status(400).send('Franqueado bloqueado')
+        return
       }
 
       //busco dados do franqueado
