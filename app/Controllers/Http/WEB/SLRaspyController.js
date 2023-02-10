@@ -91,15 +91,27 @@ class SLRaspyController {
             ]
           })
         } else {
-          raspyComTratamento[i]
-            .Selecoes
-            .push({
-              Sel: rst.SEL,
-              ProdId: rst.ProdId,
-              Produto: rst.Produto,
-              Qtd: rst.Qtd,
-              Vlr: rst.Valor
-            })
+          let y = raspyComTratamento[i].Selecoes.findIndex(sel => sel.Sel === rst.SEL)
+
+          // se já tem um produto com o mesmo ProdId
+          if (y < 0) {
+            raspyComTratamento[i]
+              .Selecoes
+              .push({
+                Sel: rst.SEL,
+                ProdId: rst.ProdId,
+                Produto: rst.Produto,
+                Qtd: rst.Qtd,
+                Vlr: rst.Valor
+              })
+          } else {
+            raspyComTratamento[i]
+              .Selecoes[y] = {
+              ...raspyComTratamento[i].Selecoes[y],
+              Qtd: raspyComTratamento[i].Selecoes[y].Qtd + rst.Qtd,
+              Vlr: raspyComTratamento[i].Selecoes[y].Vlr + rst.Valor
+            }
+          }
         }
       })
 
@@ -134,7 +146,7 @@ class SLRaspyController {
     }
   }
 
-  async GerarExcel({ request, response, params }) {
+  async GenExcel({ request, response, params }) {
     const token = request.header("authorization");
     const anxid = params.anxid
     const p1 = params.p1
@@ -152,7 +164,8 @@ class SLRaspyController {
       objToExcel.push({
         workSheetName: 'Vendas - Agrupadas por mês',
         workSheetColumnNames: ['Equipamento', 'Referência', 'Seleção', 'Produto ID', 'Produto', 'Qtd. Vendida', 'Vlr. Vendido'],
-        workSheetData: raspyMes.map(r => ([r.EquiCod, `${r.Mes}/${r.Ano}`, r.SEL, r.ProdId, r.Produto, r.Qtd, new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(r.Valor)])) })
+        workSheetData: raspyMes.map(r => ([r.EquiCod, `${r.Mes}/${r.Ano}`, r.SEL, r.ProdId, r.Produto, r.Qtd, new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(r.Valor)]))
+      })
 
       objToExcel.push({
         workSheetName: 'Vendas - Agrupadas por dia',

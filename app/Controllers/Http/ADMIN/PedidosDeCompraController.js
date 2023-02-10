@@ -111,17 +111,17 @@ class PedidosDeCompra {
     try {
       var ls = spawn(Env.get('BAT_INTEGRACAO_DOCDIR'))
 
-      ls.stdout.on('data', function (data) {
-        console.log('execução: ' + data);
-      })
+      // ls.stdout.on('data', function (data) {
+      //   console.log('execução: ' + data);
+      // })
 
       ls.stderr.on('data', function (data) {
-        console.log('erro: ' + data);
+        console.log('erro na execução do job de compras: ' + data);
       })
 
-      ls.on('exit', function (code) {
-        console.log('child process exited with code: ' + code);
-      })
+      // ls.on('exit', function (code) {
+      //   console.log('child process exited with code: ' + code);
+      // })
 
       response.status(200).send()
     } catch (err) {

@@ -161,13 +161,12 @@ class InventoryController {
         InvZerado: zerados
       })
     } catch (err) {
-      console.log(err.message)
       response.status(400).send();
       logger.error({
         token: token,
         params: params,
         payload: request.body,
-        err: err.message.message,
+        err: err.message,
         handler: 'InventoryController.Show',
       })
     }

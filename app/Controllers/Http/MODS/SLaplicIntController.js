@@ -33,7 +33,11 @@ class SLaplicIntController {
       const filePath = Helpers.publicPath(`/tmp/${EquiCod}-${moment().format('hh:mm:ss').replace(/:/g, "-")}.png`);
       await QRCode.toFile(filePath, EquiCod)
 
-      response.status(200).attachment(filePath, 'QRCODE.png')
+      const QRBin = await Drive.get(filePath)
+
+      const QRB64 = _imageEncode(QRBin)
+
+      response.status(200).send({ b64QR: QRB64 })
     } else {
       response.status(400).send({
         message: "Não foi possível gerar o QRCode"
@@ -43,3 +47,10 @@ class SLaplicIntController {
 }
 
 module.exports = SLaplicIntController
+
+const _imageEncode = (arrayBuffer) => {
+  // let u8 = new Uint8Array(arrayBuffer)
+  let b64encoded = btoa([].reduce.call(new Uint8Array(arrayBuffer), function (p, c) { return p + String.fromCharCode(c) }, ''))
+  let mimetype = "image/png"
+  return "data:" + mimetype + ";base64," + b64encoded
+}

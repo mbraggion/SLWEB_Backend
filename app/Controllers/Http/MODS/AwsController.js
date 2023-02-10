@@ -25,62 +25,6 @@ const printer = new PdfPrinter(fonts);
 const logger = require("../../../../dump/index")
 
 class AwsController {
-  async Show({ request, response, params }) {
-    const token = request.header("authorization");
-    const filetype = params.type
-    let file = null
-
-    try {
-      const verified = seeToken(token);
-
-      if (filetype === 'ovpn') {
-        const nomeOVPN = `Pilao_${verified.user_code}_Pilao.ovpn`
-
-        file = await Drive.get(`\\\\192.168.1.250\\dados\\SLTEC\\NUVEM\\VPN\\${nomeOVPN}`)
-      } else if (filetype === 'pritunl') {
-        file = await Drive.get(`\\\\192.168.1.250\\dados\\SLTEC\\NUVEM\\Pritunl.exe`)
-      }
-
-      response.status(200).send(file);
-    } catch (err) {
-      response.status(400).send();
-      logger.error({
-        token: token,
-        params: params,
-        payload: request.body,
-        err: err.message,
-        handler: 'AwsController.Show',
-      })
-    }
-  }
-
-  async See({ request, response }) {
-    const token = request.header("authorization");
-    const verified = seeToken(token);
-
-    try {
-      const awsData = await Database
-        .select('VPN_pin')
-        .from('dbo.AcessosAWS')
-        .where({
-          Filial: verified.user_code
-        })
-
-      response.status(200).send({
-        vpn_pin: awsData[0] ? awsData[0].VPN_pin : null
-      })
-    } catch (err) {
-      response.status(400).send()
-      logger.error({
-        token: token,
-        params: null,
-        payload: request.body,
-        err: err.message,
-        handler: 'AwsController.See',
-      })
-    }
-  }
-
   async GatoCompras({ response }) {
     try {
       let pedidosPendentesNaAWS = await Database.connection("mssql").raw("SELECT * FROM dbo.PedidosVenda WHERE CodigoTotvs is null and STATUS is null and Filial = '0201' and DataCriacao >= '2022-11-03 00:00:00.000'")
@@ -218,17 +162,17 @@ class AwsController {
 
         var ls = spawn(Helpers.publicPath('Carga_Pedidos_Compra_Para_TOTVs.bat'))
 
-        ls.stdout.on('data', function (data) {
-          console.log('execução: ' + data);
-        })
+        // ls.stdout.on('data', function (data) {
+        //   console.log('execução: ' + data);
+        // })
 
         ls.stderr.on('data', function (data) {
-          console.log('erro: ' + data);
+          console.log('erro na execução do job de compras: ' + data);
         })
 
-        ls.on('exit', function (code) {
-          console.log('child process exited with code: ' + code);
-        })
+        // ls.on('exit', function (code) {
+        //   console.log('child process exited with code: ' + code);
+        // })
       }
 
       response.status(200).send({
@@ -247,6 +191,9 @@ class AwsController {
 
   async GatoLeituras({ response }) {
     try {
+      // clonar a tabela Equipamentos da AWS pra Pilão
+      await Database.connection("mssql").raw("insert into SLCafes.SLAPLIC.dbo.Equipamento select * from SLAPLIC.dbo.Equipamento where EquiCod not in (select EquiCod from SLCafes.SLAPLIC.dbo.Equipamento)")
+
       // executar proc no 248
       await Database.connection("old_mssql").raw("execute dbo.sp_SLTELLeituraApp")
 
@@ -274,7 +221,7 @@ class AwsController {
       let savedEqs = [[]]
 
       const qrsPorLinha = 5
-      
+
       // const finalPathName = Helpers.publicPath(`/tmp/qrcode_auto_full.png`);
       const finalPathName = Helpers.publicPath(`/tmp/qrcode_auto_full.pdf`);
 
@@ -307,7 +254,7 @@ class AwsController {
       pdfDoc.end();
 
       for (const linha of savedFiles) {
-        for(const index in linha){
+        for (const index in linha) {
           await Drive.delete(linha[index])
         }
       }
