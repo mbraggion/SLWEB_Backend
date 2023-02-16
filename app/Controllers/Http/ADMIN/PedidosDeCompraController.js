@@ -39,7 +39,7 @@ class PedidosDeCompra {
         }
       }
 
-      let transportadoras = await Database.raw('use SDBP12 select A4_COD, A4_NREDUZ from dbo.SA4010 use SLAPLIC')
+      let transportadoras = await Database.raw('select A4_COD, A4_NREDUZ from SLCafes.SDBP12.dbo.SA4010 ')
 
       response.status(200).send({
         Pedidos: pedidosDeCompraEmAberto,
@@ -51,7 +51,7 @@ class PedidosDeCompra {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PedidosDeCompra.Show',
       })
     }
@@ -72,7 +72,8 @@ class PedidosDeCompra {
         })
 
       if (jaFoiProcessado.length < 1) {
-        throw new Error('pedido já processado')
+        response.status(400).send('pedido já processado')
+        return
       }
 
       //fazer update aqui
@@ -98,7 +99,7 @@ class PedidosDeCompra {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PedidosDeCompra.Update',
       })
     }
@@ -129,7 +130,7 @@ class PedidosDeCompra {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PedidosDeCompra.Integrar',
       })
     }

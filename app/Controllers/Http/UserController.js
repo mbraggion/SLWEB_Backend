@@ -54,7 +54,7 @@ class UserController {
         token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.Login',
       })
     }
@@ -64,11 +64,7 @@ class UserController {
     const { user_code } = request.only(["user_code"]);
 
     try {
-      const checkUser = await Database.select("*")
-        .from("dbo.FilialEntidadeGrVenda")
-        .where({
-          M0_CODFIL: user_code,
-        });
+      const checkUser = await Database.raw('select * from dbo.FilialEntidadeGrVenda where M0_CODFIL = ?', [user_code])
 
       if (checkUser.length < 1) {
         //se não encontrar o codigo do franqueado
@@ -77,11 +73,7 @@ class UserController {
         //se encontrar o codigo do franqueado
 
         //busca a senha do franqueado
-        const senha = await Database.select("Senha")
-          .from("dbo.FilialAcesso")
-          .where({
-            M0_CODFIL: user_code,
-          });
+        const senha = await Database.raw('select Senha from dbo.FilialAcesso where M0_CODFIL = ?', [user_code])
 
         //envia a senha do franqueado por email
         await Mail.send(
@@ -103,7 +95,7 @@ class UserController {
         token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.Forgot',
       })
     }
@@ -116,7 +108,7 @@ class UserController {
       const token = await genTokenAdm(admin_code, admin_password)
 
       const links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [admin_code, process.env.NODE_ENV, admin_code] : [admin_code, admin_code])
-      
+
       let linksEmSessões = []
 
       links.forEach(ln => {
@@ -134,7 +126,7 @@ class UserController {
         token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.AdmPartialLogin',
       })
     }
@@ -169,7 +161,7 @@ class UserController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.AdmFullLogin',
       })
     }
@@ -202,7 +194,7 @@ class UserController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.AdmLogoutFilial',
       })
     }
@@ -212,15 +204,12 @@ class UserController {
     const { code } = request.only(["code"]);
 
     try {
-      const tentativa = await Database.select("*")
-        .from("dbo.CrossLogin")
-        .where({
-          M0_CODFIL: code,
-          Logou: false,
-        })
-        .orderBy("DtSolicita", "Desc");
+      const tentativa = await Database.raw('select * from dbo.CrossLogin where M0_CODFIL = ? AND Logou = ? order by DtSolicita DESC', [code, false])
 
-      if (tentativa.length < 1) throw new Error('Cross login não registrado pelo SLAplic');
+      if (tentativa.length < 1) {
+        response.status(400).send('Cross login não registrado pelo SLAplic')
+        return
+      }
 
       const HorarioMaximo = new Date(
         new Date(tentativa[0].DtSolicita).getFullYear(),
@@ -242,14 +231,7 @@ class UserController {
 
       //data criação <= data de criação + 1min
       if (HorarioAtual < HorarioMaximo) {
-        await Database.table("dbo.CrossLogin")
-          .where({
-            M0_CODFIL: code,
-            Logou: false,
-          })
-          .update({
-            Logou: true,
-          });
+        await Database.raw('update dbo.CrossLogin set Logou = ? where M0_CODFIL = ? and Logou = ?', [true, code, false])
 
         const token = await genTokenExternal(code);
 
@@ -267,7 +249,8 @@ class UserController {
 
         response.status(202).send({ ...token, Links: linksEmSessões.filter(LS => LS !== null) });
       } else {
-        throw new Error('Mais de 1 minuto de redirecionamento');
+        response.status(400).send('Mais de 1 minuto de redirecionamento')
+        return
       }
 
     } catch (err) {
@@ -276,7 +259,7 @@ class UserController {
         token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'UserController.ExternalAuth',
       })
     }

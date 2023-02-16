@@ -61,7 +61,7 @@ class VendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.Produtos',
       })
     }
@@ -85,7 +85,7 @@ class VendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.Show',
       })
     }
@@ -111,7 +111,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.See',
       })
     }
@@ -125,7 +125,7 @@ class VendaController {
     try {
       const verified = seeToken(token);
 
-      const ultPvcId = await Database.raw("select MAX(PvcID) as UltimoID from dbo.PedidosVendaCab where PvcSerie = 'F' and GrpVen = ?", [verified.grpven]);
+      const ultPvcId = await Database.raw("select MAX(PvcID) as UltimoID from dbo.PedidosVendaCab where GrpVen = ?", [verified.grpven]);
 
       const actualDate = moment().subtract(3, "hours").toDate()
 
@@ -167,10 +167,11 @@ class VendaController {
           M0_TIPO: 'S',
           PvTipo: String(Pedido.TipoVenda).slice(0, 10),
           D_DOC: `000000000${Number(ultPvcId[0].UltimoID) + 1}`.slice(-9),
-          DEPDEST: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : String(Pedido.RemOrigem).slice(0, 3) : String(0),
+          DepOri: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 1 : String(Pedido.RemOrigem).slice(0, 3) : String(1),
+          DEPDEST: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : String(Pedido.RemDestino).slice(0, 3) : String(0),
           DtEmissao: moment().subtract(3, "hours").toDate(),
           D_TES: '0',
-          C5_ZZADEST: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : String(Pedido.RemOrigem).slice(0, 3) : String(0),
+          C5_ZZADEST: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : String(Pedido.RemDestino).slice(0, 3) : String(0),
           D_COD: String(item.CodFab).slice(0, 15),
           ProdId: String(item.ProdId).slice(0, 4),
           Produto: String(item.Produto).slice(0, 100),
@@ -202,7 +203,7 @@ class VendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.Store',
       })
     }
@@ -262,7 +263,7 @@ class VendaController {
         DataCriacao: actualDate,
         DataIntegracao: null,
         DepId: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 1 : Pedido.RemOrigem : 0,
-        DepIdDest: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : Pedido.RemOrigem : 0,
+        DepIdDest: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : Pedido.RemDestino : 0,
         PvTipo: Pedido.TipoVenda,
         STATUS: 'P',
         MsgNF: Pedido.OBS
@@ -290,10 +291,11 @@ class VendaController {
           M0_TIPO: 'S',
           PvTipo: String(Pedido.TipoVenda).slice(0, 10),
           D_DOC: `000000000${Number(ultPvcId[0].UltimoID) + 1}`.slice(-9),
-          DEPDEST: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : String(Pedido.RemOrigem).slice(0, 3) : String(0),
+          DepOri: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 1 : String(Pedido.RemOrigem).slice(0, 3) : String(1),
+          DEPDEST: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : String(Pedido.RemDestino).slice(0, 3) : String(0),
           DtEmissao: moment().subtract(3, "hours").toDate(),
           D_TES: '0',
-          C5_ZZADEST: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : String(Pedido.RemOrigem).slice(0, 3) : String(0),
+          C5_ZZADEST: Pedido.TipoVenda !== 'B' ? Pedido.TipoVenda === 'V' ? 0 : String(Pedido.RemDestino).slice(0, 3) : String(0),
           D_COD: String(item.CodFab).slice(0, 15),
           ProdId: String(item.ProdId).slice(0, 4),
           Produto: String(item.Produto).slice(0, 100),
@@ -325,7 +327,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.Update',
       })
     }
@@ -370,7 +372,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.CancelVenda',
       })
     }
@@ -390,7 +392,11 @@ class VendaController {
         .where({
           M0_CODFIL: verified.user_code,
         });
-      if (Sigamat[0].M0_EmiteNF === "N") throw new Error();
+        
+      if (Sigamat[0].M0_EmiteNF === "N") {
+        response.status(400).send('Emissão de NFe desabilitada')
+        return
+      }
 
       //verifico se a nota já foi gerada, foi cancelada ou já foi solicitada.
       const NotaGerada = await Database.select("*")
@@ -406,7 +412,8 @@ class VendaController {
         NotaGerada[0].STATUS === "S" ||
         NotaGerada[0].STATUS === "F"
       ) {
-        throw new Error();
+        response.status(400).send('Nota já solicitada, emitida, ou cancelada')
+        return
       }
 
       //um update se for bonificacao
@@ -469,7 +476,8 @@ class VendaController {
       const PedidoParaFaturar = await Database.raw(queryPedidosParaFaturar, [NovoIDPedido, verified.grpven, PvcID])
 
       if (PedidoParaFaturar.length < 1) {
-        throw new Error('Não há itens à faturar na pedidosVendaDet')
+        response.status(400).send('Não há itens à faturar')
+        return
       }
 
       PedidoParaFaturar.forEach(async (item, i) => {
@@ -515,7 +523,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.RequestNFeGeneration',
       })
     }
@@ -608,7 +616,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.RecoverDocs',
       })
     }
@@ -647,7 +655,7 @@ class VendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'VendaController.GenPDFVenda',
       })
     }

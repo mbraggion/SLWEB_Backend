@@ -38,7 +38,7 @@ class CompraController {
       Database.raw('execute dbo.sp_AcertaPedCompra')
 
       const Produtos = await Database.raw(queryProdutos);
-      
+
       const Desconto = await Database
         .select('ParamVlr')
         .from('dbo.Parametros')
@@ -60,7 +60,7 @@ class CompraController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Produtos',
       })
     }
@@ -90,7 +90,7 @@ class CompraController {
       const PedidosNaoFaturados = await Database.raw(queryPedidosAFaturar, [verified.grpven]);
 
       // busco as compras feitas durante o ano
-      const ComprasAoAno = await Database.raw(queryComprasAno, verified.grpven);
+      const ComprasAoAno = await Database.raw(queryComprasAno, [moment().year(), verified.user_code]);
 
       // verifico se o cara já tentou fazer algum scam com a empresa
       const Info = await Database.select('Confiavel', 'VlrMinCompra', 'UF').from('dbo.FilialEntidadeGrVenda').where({
@@ -124,7 +124,7 @@ class CompraController {
         Confiavel: Info[0].Confiavel,
         NaoCompensavel: nCompensa,
         VlrMinCompra: Info[0].VlrMinCompra,
-        Retira: Info[0].UF === 'SP' ? true : false 
+        Retira: Info[0].UF === 'SP' ? true : false
       });
     } catch (err) {
       response.status(400).send();
@@ -132,7 +132,7 @@ class CompraController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Contas',
       })
     }
@@ -159,7 +159,7 @@ class CompraController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Pedidos',
       })
     }
@@ -285,7 +285,7 @@ class CompraController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.PedidoDet',
       })
     }
@@ -293,14 +293,15 @@ class CompraController {
 
   async Comprar({ request, response }) {
     const token = request.header("authorization");
-    const { Items, Obs, Retira, AVista, Desconto } = request.only(["Items", "Obs", "Retira", 'AVista', 'Desconto']);
+    let { Items, Obs, Retira, AVista, Desconto } = request.only(["Items", "Obs", "Retira", 'AVista', 'Desconto']);
 
     try {
       const verified = seeToken(token);
 
       //verifico se o pedido tem pelo menos 1 item
       if (Items.length === 0) {
-        throw new Error('Nenhum item registrado para compra');
+        response.status(400).send('Nenhum item registrado para compra')
+        return
       }
 
       //testar se o cara tem limite
@@ -326,15 +327,16 @@ class CompraController {
         limite[0].LimiteAtual - PedidosNaoFaturados[0].Total - TotalDoPedido <
         0
       ) {
-        throw new Error('Limite insuficiente');
+        response.status(400).send('Limite insuficiente')
+        return
       }
-
 
       //testo se o cara ta bloqueado
       const bloqueado = await Database.raw(queryBloqueado, [verified.grpven]);
 
       if (bloqueado.length === 0 || bloqueado[0].Bloqueado === "S") {
-        throw new Error('Franqueado bloqueado');
+        response.status(400).send('Franqueado bloqueado')
+        return
       }
 
       //busco dados do franqueado
@@ -351,6 +353,48 @@ class CompraController {
       );
 
       const ProxId = Number(UltPedidoID[0].UltPedido) + 1;
+
+      // converto cada kit em QtdKit * QtdProd, removo o kit do carrinho
+      // let kit1 = Items
+      //   .filter(kit => String(kit.Cód) === String(251122))[0]
+
+      // if (typeof kit1 !== 'undefined') {
+      //   itensDoKit1.forEach(it => {
+      //     Items.push({
+      //       Cód: it.Cód,
+      //       Produto: it.Produto,
+      //       QtMin: it.QtMin,
+      //       VlrUn: it.VlrUn,
+      //       Vlr: it.Vlr,
+      //       FatConversao: it.FatConversao,
+      //       ProdRoy: it.ProdRoy,
+      //       QCompra: it.QCompra * kit1.QCompra, 
+      //     })
+      //   })
+
+      //   Items = Items.filter(it => String(it.Cód) !== String(251122))
+      // }
+
+      // converto cada kit em QtdKit * QtdProd, removo o kit do carrinho
+      // let kit2 = Items
+      //   .filter(kit => String(kit.Cód) === String(221125))[0]
+
+      // if (typeof kit2 !== 'undefined') {
+      //   itensDoKit2.forEach(it => {
+      //     Items.push({
+      //       Cód: it.Cód,
+      //       Produto: it.Produto,
+      //       QtMin: it.QtMin,
+      //       VlrUn: it.VlrUn,
+      //       Vlr: it.Vlr,
+      //       FatConversao: it.FatConversao,
+      //       ProdRoy: it.ProdRoy,
+      //       QCompra: it.QCompra * kit2.QCompra, 
+      //     })
+      //   })
+
+      //   Items = Items.filter(it => String(it.Cód) !== String(221125))
+      // }
 
       //salvo o pedido nas tabelas
       await Database.insert({
@@ -404,7 +448,7 @@ class CompraController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Comprar',
       })
     }
@@ -458,7 +502,7 @@ class CompraController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Cancelar',
       })
     }
@@ -483,7 +527,7 @@ class CompraController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.RetriveBoleto',
       })
     }
@@ -507,7 +551,7 @@ class CompraController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.RetriveNota',
       })
     }
@@ -641,7 +685,7 @@ class CompraController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.Compensar',
       })
     }
@@ -686,13 +730,12 @@ class CompraController {
 
       response.status(200).send(enviarDaMemóriaSemEsperarSalvarNoFS)
     } catch (err) {
-      console.log(err.message)
       response.status(400).send()
       logger.error({
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.GenPDFCompra',
       })
     }
@@ -762,7 +805,7 @@ class CompraController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'CompraController.ConsultaRota',
       })
     }
@@ -770,6 +813,82 @@ class CompraController {
 }
 
 module.exports = CompraController;
+
+// const itensDoKit1 = [
+//   {
+//     Cód: 2631,
+//     Produto: "ACHOCOLATADO PILAO PROFESSIONAL (PACOTE 1,05KG)",
+//     QtMin: 1.05,
+//     VlrUn: 33.2715,
+//     Vlr: 34.9350,
+//     FatConversao: 1.05,
+//     ProdRoy: 1,
+//     QCompra: 4
+//   },
+//   {
+//     Cód: 4433,
+//     Produto: "CAFE PILAO EXPRESSO INSTITUCIONAL (PACOTE 1KG)",
+//     QtMin: 1,
+//     VlrUn: 41.2284,
+//     Vlr: 41.2284,
+//     FatConversao: 1,
+//     ProdRoy: 1,
+//     QCompra: 6
+//   },
+//   {
+//     Cód: 2641,
+//     Produto: "CAPPUCCINO PILAO PROFESSIONAL (PACOTE 1KG)",
+//     QtMin: 1,
+//     VlrUn: 48.5050,
+//     Vlr: 48.5050,
+//     FatConversao: 1,
+//     ProdRoy: 1,
+//     QCompra: 2
+//   },
+//   {
+//     Cód: 2667,
+//     Produto: "PP CAFE C/ LEITE PILAO PROFESSIONAL (PACOTE 1KG)",
+//     QtMin: 1,
+//     VlrUn: 49.3434,
+//     Vlr: 49.3434,
+//     FatConversao: 1,
+//     ProdRoy: 1,
+//     QCompra: 3
+//   }
+// ]
+
+// const itensDoKit2 = [
+//   {
+//     Cód: 2631,
+//     Produto: "ACHOCOLATADO PILAO PROFESSIONAL (PACOTE 1,05KG)",
+//     QtMin: 1.05,
+//     VlrUn: 33.2715,
+//     Vlr: 34.9350,
+//     FatConversao: 1.05,
+//     ProdRoy: 1,
+//     QCompra: 5
+//   },
+//   {
+//     Cód: 4433,
+//     Produto: "CAFE PILAO EXPRESSO INSTITUCIONAL (PACOTE 1KG)",
+//     QtMin: 1,
+//     VlrUn: 41.2284,
+//     Vlr: 41.2284,
+//     FatConversao: 1,
+//     ProdRoy: 1,
+//     QCompra: 6
+//   },
+//   {
+//     Cód: 2641,
+//     Produto: "CAPPUCCINO PILAO PROFESSIONAL (PACOTE 1KG)",
+//     QtMin: 1,
+//     VlrUn: 48.5050,
+//     Vlr: 48.5050,
+//     FatConversao: 1,
+//     ProdRoy: 1,
+//     QCompra: 4
+//   }
+// ]
 
 const matchCEPWithRanges = (targetCEP, CEPRanges) => {
   const matchIndex = []
@@ -909,8 +1028,7 @@ const queryBloqueado =
 const queryDuplicatas =
   "SELECT * FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) AND (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc WHERE SE1_GrpVen.GrpVen = ?";
 
-const queryComprasAno =
-  "SELECT * FROM ( SELECT dbo.SE1_GrpVenT.GrpVen, dbo.SE1_GrpVenT.MesE, dbo.SE1_GrpVenT.E1_VALOR FROM dbo.SE1_GrpVenT INNER JOIN SE1_Class ON (dbo.SE1_GrpVenT.E1_TIPO = SE1_Class.E1_TIPO) AND ( dbo.SE1_GrpVenT.E1_PREFIXO = SE1_Class.E1_PREFIXO ) WHERE ( ((dbo.SE1_GrpVenT.GrpVen) = ?) AND (SE1_Class.E1Desc = 'Compra' ) AND ((dbo.SE1_GrpVenT.AnoE) = Year(GETDATE())) ) ) t PIVOT ( Sum(t.E1_VALOR) FOR t.MesE IN( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12] ) ) p";
+const queryComprasAno = "SELECT * FROM ( SELECT dbo.FilialEntidadeGrVenda.M0_CODFIL, dbo.FilialEntidadeGrVenda.GrupoVenda, MONTH([DtEmissao]) AS mes, Year([DtEmissao]) AS ano, IIf([F2_VALFAT] = 0, 'Bonificação', 'Compra') AS Tipo, dbo.SDBase.D_TOTAL FROM ( dbo.SDBase INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.SDBase.GRPVEN = dbo.FilialEntidadeGrVenda.A1_GRPVEN ) INNER JOIN dbo.Produtos ON dbo.SDBase.ProdId = dbo.Produtos.ProdId WHERE ( ((dbo.SDBase.F_SERIE) = '1') AND ((dbo.SDBase.D_FILIAL) = '0201') AND ((dbo.SDBase.M0_TIPO) = 'E') AND ((Year([DtEmissao])) = ?) AND ((dbo.Produtos.ProdRoy) = 1) ) GROUP BY dbo.FilialEntidadeGrVenda.M0_CODFIL, dbo.FilialEntidadeGrVenda.GrupoVenda, dbo.SDBase.GRPVEN, dbo.SDBase.D_TOTAL, Year([DtEmissao]), MONTH([DtEmissao]), IIf([F2_VALFAT] = 0, 'Bonificação', 'Compra') ) t PIVOT ( Sum(t.D_TOTAL) FOR t.mes IN( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12] ) ) p where M0_CODFIL = ? order by Tipo DESC";
 
 const queryPedidosNaoAtendidos =
   "SELECT 'Processando' AS Status, dbo.PedidosCompraCab.DataCriacao AS Solicitacao, dbo.PedidosCompraCab.PedidoId as Pedido, '' as NF, '' as Serie, Sum(dbo.PedidosVenda.PrecoTotal) AS Total, Count(dbo.PedidosVenda.Item) AS QtItems FROM dbo.PedidosVenda  INNER JOIN dbo.PedidosCompraCab ON (dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial) AND (dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId)  WHERE (((dbo.PedidosCompraCab.NroNF) Is Null) AND ((dbo.PedidosCompraCab.GrpVen)=?) AND ((dbo.PedidosVenda.STATUS)<>'C' Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null))  GROUP BY dbo.PedidosCompraCab.STATUS, dbo.PedidosCompraCab.DataCriacao, dbo.PedidosCompraCab.PedidoId, dbo.PedidosVenda.CodigoTotvs  ORDER BY dbo.PedidosCompraCab.DataCriacao DESC";
@@ -927,4 +1045,5 @@ const queryPedidosAtendidosDetPorDocNum =
 const queryLimiteDisponivel =
   "SELECT IIf( [Compras] > 0, [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) - [Compras], [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, IIF( dbo.FilialEntidadeGrVenda.LimExtraCredito is null, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) ) ) AS LimiteAtual FROM dbo.FilialEntidadeGrVenda LEFT JOIN ( SELECT SE1_GrpVen.GrpVen, Sum(SE1_GrpVen.E1_SALDO) AS Compras FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) AND (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc WHERE (((SE1_Class.E1Desc = 'Compra' ))) GROUP BY SE1_GrpVen.GrpVen ) as SE1_ComprasNVencidas ON dbo.FilialEntidadeGrVenda.A1_GRPVEN = SE1_ComprasNVencidas.GrpVen WHERE ( ((dbo.FilialEntidadeGrVenda.Inatv) Is Null) and dbo.FilialEntidadeGrVenda.A1_GRPVEN = ? )";
 
-const queryPedidosAFaturar = "SELECT IIF(Sum(dbo.PedidosVenda.PrecoTotal) is null, 0, Sum(dbo.PedidosVenda.PrecoTotal)) AS Total FROM dbo.PedidosVenda INNER JOIN dbo.PedidosCompraCab ON (     dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial ) AND (     dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId ) WHERE (     ((dbo.PedidosCompraCab.NroNF) Is Null)     AND ((dbo.PedidosCompraCab.GrpVen) = ?)     AND (    (dbo.PedidosVenda.STATUS) <> 'C'    Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null     ) )"
+const queryPedidosAFaturar =
+  "SELECT IIF(Sum(dbo.PedidosVenda.PrecoTotal) is null, 0, Sum(dbo.PedidosVenda.PrecoTotal)) AS Total FROM dbo.PedidosVenda INNER JOIN dbo.PedidosCompraCab ON (     dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial ) AND (     dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId ) WHERE (     ((dbo.PedidosCompraCab.NroNF) Is Null)     AND ((dbo.PedidosCompraCab.GrpVen) = ?)     AND (    (dbo.PedidosVenda.STATUS) <> 'C'    Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null     ) )"

@@ -30,7 +30,7 @@ class EquipController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipController.Show',
       })
     }
@@ -56,7 +56,7 @@ class EquipController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipController.See',
       })
     }
@@ -213,7 +213,7 @@ class EquipController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipController.Update',
       })
     }
@@ -243,7 +243,7 @@ class EquipController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipController.StoreReport',
       })
     }
@@ -273,7 +273,7 @@ class EquipController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipController.DeleteReport',
       })
     }
@@ -294,7 +294,7 @@ class EquipController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipController.SeeConfirmInfo',
       })
     }
@@ -342,7 +342,7 @@ class EquipController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'EquipController.ConfirmAddresses',
       })
     }

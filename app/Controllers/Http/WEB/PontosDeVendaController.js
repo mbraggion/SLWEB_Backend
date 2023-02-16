@@ -25,7 +25,7 @@ class PontosDeVendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PontosDeVendaController.Show',
       })
     }
@@ -93,7 +93,7 @@ class PontosDeVendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PontosDeVendaController.See',
       })
     }
@@ -111,12 +111,13 @@ class PontosDeVendaController {
       //se for ativar, verificar se já não tem outro PDV com aquele EQ
       const pdvsAtivosComEq = await Database.raw(QUERY_PDVS_ATIVOS_COM_EQCOD, [verified.grpven, AnxId, PdvId])
       const EqPertenceAoFranqueado = await Database.raw(QUERY_EQ_NA_BASE, [Eq, verified.grpven])
-      
+
       if (
         (pdvsAtivosComEq[0].MaxPdvsAtivosComEquiCod > 0 && Status === 'A') ||
         (EqPertenceAoFranqueado.length < 1 && Status === 'A')
       ) {
-        throw new Error('Equipamento não está mais na posse do franqueado')
+        response.status(400).send('Equipamento não está mais na posse do franqueado')
+        return
       }
 
       await Database.table("dbo.PontoVenda")
@@ -139,7 +140,7 @@ class PontosDeVendaController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PontosDeVendaController.InativPDV',
       })
     }
@@ -285,7 +286,7 @@ class PontosDeVendaController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'PontosDeVendaController.Update',
       })
     }

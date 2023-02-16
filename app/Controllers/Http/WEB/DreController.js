@@ -82,7 +82,7 @@ class DreController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'DreController.See',
       })
     }
@@ -136,7 +136,7 @@ class DreController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'DreController.UpdateDRE',
       })
     }
@@ -211,7 +211,7 @@ class DreController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'DreController.UpdateDOV',
       })
     }
@@ -272,7 +272,7 @@ class DreController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'DreController.GenExcelBaseRoyalties',
       })
     }
@@ -345,7 +345,7 @@ class DreController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'DreController.GenExcelDRE',
       })
     }

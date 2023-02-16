@@ -3,6 +3,9 @@ const Database = use("Database");
 const { seeToken } = require("../../../Services/jwtServices");
 const moment = require("moment");
 const logger = require("../../../../dump/index")
+const GerarExcel = require("../../../Services/excelExportService");
+const Drive = use("Drive");
+const Helpers = use("Helpers");
 
 class ApontaConsumoController {
   /** @param {object} ctx
@@ -37,7 +40,7 @@ class ApontaConsumoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ApontaConsumoController.Leituras',
       })
     }
@@ -73,7 +76,7 @@ class ApontaConsumoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ApontaConsumoController.See',
       })
     }
@@ -90,14 +93,16 @@ class ApontaConsumoController {
 
       // verificar se o pdv tem depid
       if (DepId === null) {
-        throw new Error('ID do depósito indefinido')
+        response.status(400).send('ID do depósito indefinido')
+        return
       }
 
       DepId = Number(DepId)
 
       // verificar se o cara não está tentando lançar movimentação no depósito 1
       if (DepId === 1) {
-        throw new Error('Não é possivel fazer apontamento de consumo no depósito 1')
+        response.status(400).send('Não é possivel fazer apontamento de consumo no depósito 1')
+        return
       }
 
       let DOC = null
@@ -154,7 +159,7 @@ class ApontaConsumoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ApontaConsumoController.Store',
       })
     }
@@ -172,7 +177,8 @@ class ApontaConsumoController {
 
       // verificar se o pdv tem depid
       if (DepId === null) {
-        throw new Error('ID do depósito indefinido')
+        response.status(400).send('ID do depósito indefinido')
+        return
       }
 
       DepId = Number(DepId)
@@ -201,8 +207,58 @@ class ApontaConsumoController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ApontaConsumoController.Destroy',
+      })
+    }
+  }
+
+  async GenExcel({ request, response, params }) {
+    const token = request.header("authorization");
+
+    const AnxId = params.anxid
+    const PdvId = params.pdvid
+    const leituraIdInit = params.letini
+    const leituraIdEnc = params.letenc
+
+    let objToExcel = []
+
+    
+    try {
+      const verified = seeToken(token);
+      const filePath = Helpers.publicPath(`/tmp/CONSUMO_${verified.user_code}_${moment(leituraIdInit).format('DD-MM-YYYY')}_a_${moment(leituraIdEnc).format('DD-MM-YYYY')}.xlsx`);
+
+      const produtos = await Database.raw("execute dbo.sp_ApontaConsumo1 @GrpVen = ?, @AnxId = ?, @PdvId = ?, @LeituraId1 = ?, @LeituraId2 = ?", [verified.grpven, AnxId, PdvId, leituraIdInit, leituraIdEnc])
+      const consumos = await Database.raw("execute dbo.sp_ApontaConsumo2 @GrpVen = ?, @AnxId = ?, @PdvId = ?, @LeituraId1 = ?, @LeituraId2 = ?", [verified.grpven, AnxId, PdvId, leituraIdInit, leituraIdEnc])
+
+      objToExcel.push({
+        workSheetName: 'Consumo de doses',
+        workSheetColumnNames: ['Seleção', 'Dose', 'Receita', 'Contenedor Inicial', 'Contenedor Final', 'Consumo'],
+        workSheetData: produtos.map(p => ([p.PvpSel, p.Produto, p.RecDesc, p.QtdI, p.QtdF, p.QtdF - p.QtdI])),
+      })
+
+      objToExcel.push({
+        workSheetName: 'Consumo de insumos',
+        workSheetColumnNames: ['Tipo', 'Código', 'Produto', 'Unidade', 'Consumido'],
+        workSheetData: consumos.map(c => ([c.GprdDesc, c.ProdId, c.Produto, c.GprdUn, c.Con])),
+      })
+
+      await GerarExcel(
+        objToExcel,
+        filePath
+      )
+
+      const location = await Drive.get(filePath);
+
+      response.status(200).send(location);
+    } catch (err) {
+      response.status(400).send();
+      logger.error({
+        token: token,
+        params: params,
+        payload: request.body,
+        err: err.message,
+        handler: 'ApontaConsumoController.GenExcel',
       })
     }
   }

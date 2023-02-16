@@ -29,7 +29,7 @@ class LogsController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'LogsController.Navegacao',
       })
     }

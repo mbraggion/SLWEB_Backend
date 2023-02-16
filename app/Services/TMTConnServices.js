@@ -23,7 +23,7 @@ exports.GenTokenTMT = async (filial) => {
       token: null,
       params: null,
       payload: filial,
-      err: err,
+      err: err.message,
       handler: 'TMTConnServices.GenTokenTMT',
     })
   }
@@ -44,7 +44,7 @@ exports.ListClients = async (token) => {
       token: token,
       params: null,
       payload: null,
-      err: err,
+      err: err.message,
       handler: 'TMTConnServices.ListClients',
     })
   }
@@ -65,7 +65,7 @@ exports.ListCidades = async (token) => {
       token: token,
       params: null,
       payload: null,
-      err: err,
+      err: err.message,
       handler: 'TMTConnServices.ListCidades',
     })
   }
@@ -86,7 +86,7 @@ exports.ListInstalacoes = async (token) => {
       token: token,
       params: null,
       payload: null,
-      err: err,
+      err: err.message,
       handler: 'TMTConnServices.ListInstalacoes',
     })
   }
@@ -107,7 +107,7 @@ exports.ListMaquinas = async (token) => {
       token: token,
       params: null,
       payload: null,
-      err: err,
+      err: err.message,
       handler: 'TMTConnServices.ListMaquinas',
     })
   }
@@ -128,7 +128,7 @@ exports.ListSegmentos = async (token) => {
       token: token,
       params: null,
       payload: null,
-      err: err,
+      err: err.message,
       handler: 'TMTConnServices.ListSegmentos',
     })
   }
@@ -164,7 +164,7 @@ exports.StoreClient = async (token, cliente, cidade, empresaID, segmento) => {
       token: token,
       params: null,
       payload: { cliente, cidade, empresaID, segmento },
-      err: err,
+      err: err.message,
       handler: 'TMTConnServices.StoreClient',
     })
   }
@@ -188,7 +188,7 @@ exports.StoreInstalacao = async (token, empresaID, maquinaID, clienteID) => {
       token: token,
       params: null,
       payload: { empresaID, maquinaID, clienteID },
-      err: err,
+      err: err.message,
       handler: 'TMTConnServices.StoreInstalacao',
     })
   }
@@ -227,7 +227,7 @@ exports.UpdateClient = async (token, ID, cliente, cidade, empresaID, segmento) =
       token: token,
       params: null,
       payload: { ID, cliente, cidade, empresaID, segmento },
-      err: err,
+      err: err.message,
       handler: 'TMTConnServices.UpdateClient',
     })
   }
@@ -253,7 +253,7 @@ exports.FecharInstalacoes = async (token, instalacao) => {
       token: token,
       params: null,
       payload: instalacao,
-      err: err,
+      err: err.message,
       handler: 'TMTConnServices.FecharInstalacoes',
     })
   }
@@ -318,7 +318,7 @@ exports.FindEnderecoPorInstalacaoCliente = async (token, instalacao) => {
       token: token,
       params: null,
       payload: instalacao,
-      err: err,
+      err: err.message,
       handler: 'TMTConnServices.FindEnderecoPorInstalacaoCliente',
     })
   }

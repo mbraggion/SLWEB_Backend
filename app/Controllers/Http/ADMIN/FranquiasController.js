@@ -3,45 +3,138 @@
 const Database = use("Database");
 
 const logger = require("../../../../dump/index")
-const { seeToken } = require("../../../Services/jwtServices");
 
 class FranquiasController {
   async Show({ request, response }) {
-    const token = request.header("authorization");
-
     try {
-      const verified = seeToken(token);
-
-      if (verified.role === "Franquia") {
-        throw new Error('Usuário não autorizado');
-      }
-
       const filiais = await Database.raw(QUERY_TODAS_FILIAIS)
 
       response.status(200).send(filiais);
     } catch (err) {
       response.status(400).send();
       logger.error({
-        token: token,
+        token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'FranquiasController.Show',
       })
     }
   }
 
+  async See({ request, response, params }) {
+    const grpven = params.grpven
+    const res = params.res
+
+    try {
+
+      switch (res) {
+        case 'dados':
+          const FEGV = await Database.raw(QUERY_FEGV, [grpven])
+
+          if (FEGV.length === 0) {
+            response.status(400).send('Franquia não consta em FEGV')
+            return
+          }
+
+          const FranqEEmpresa = await Database.raw(QUERY_FEE, [FEGV[0].A1_COD, grpven])
+
+          const Franqueados = FranqEEmpresa.filter(f => f.A1_SATIV1 === '000113' && f.TPessoa === 'F')
+          const Empresa = FranqEEmpresa.filter(f => f.A1_SATIV1 === '000113' && f.TPessoa === 'J')
+
+          const PF = Franqueados.map(f => ({
+            Nome: f.Razão_Social,
+            CPF: f.CNPJ,
+            Email: f.Email,
+            Telefone: `${f.DDD}${f.Fone}`,
+            Logradouro: f.Logradouro,
+            Numero: f.Número,
+            Complemento: f.Complemento,
+            Bairro: f.Bairro,
+            CEP: f.CEP,
+            Municipio: f.Município,
+            UF: f.UF
+          }))
+
+          const PJ = Empresa.map(e => ({
+            RazaoSocial: e.Razão_Social,
+            CNPJ: e.CNPJ,
+            Email: e.Email,
+            Telefone: `${e.DDD}${e.Fone}`,
+            Logradouro: e.Logradouro,
+            Numero: e.Número,
+            Complemento: e.Complemento,
+            Bairro: e.Bairro,
+            CEP: e.CEP,
+            Municipio: e.Município,
+            UF: e.UF
+          }))
+
+          const DIST_CLI = await Database.raw(QUERY_CLIENTES_DIST, [grpven])
+
+          let DIST_EQ = await Database.raw(QUERY_EQUIPAMENTOS, [grpven, grpven, grpven])
+          let LEIT_S = await Database.raw(QUERY_LEIT_STATUS, [grpven])
+
+          const bloqueado = await Database.raw(QUERY_BLOQUEADO, [grpven])
+
+          response.status(200).send({
+            PF,
+            PJ,
+            FIN: {
+              EmiteNF: FEGV[0].EmiteNF,
+              Limite: FEGV[0].LimiteCredito,
+              LimiteExtra: FEGV[0].LimExtraCredito,
+              DtExtraConcedido: FEGV[0].DtExtraCredito,
+              MinCompra: FEGV[0].VlrMinCompra,
+              Confiavel: FEGV[0].Confiavel,
+              PodeRetirar: FEGV[0].Retira,
+              Bloqueado: bloqueado[0].Bloqueado,
+              CondicaoPagPadrao: FEGV[0].CondPag
+            },
+            CAR: {
+              Clientes: DIST_CLI,
+              LimiteLeads: FEGV[0].MaxLeads,
+              AtivosStatus: LEIT_S,
+              AtivosDist: DIST_EQ
+            },
+          });
+
+          break;
+        case 'acoes':
+          const limite = await Database
+            .select('LimiteCredito', 'LimExtraCredito', 'DtExtraCredito')
+            .from('dbo.FilialEntidadeGrVenda')
+            .where({
+              A1_GRPVEN: grpven
+            })
+
+          response.status(200).send({
+            Limite: limite[0].LimiteCredito,
+            LimiteExtra: limite[0].LimExtraCredito,
+            ValidadeLimiteExtra: limite[0].DtExtraCredito,
+          });
+          break;
+        default:
+          response.status(400).send('parametros inválidos')
+          return
+      }
+
+    } catch (err) {
+      response.status(400).send();
+      logger.error({
+        token: null,
+        params: params,
+        payload: request.body,
+        err: err.message,
+        handler: 'FranquiasController.See',
+      })
+    }
+  }
+
   async Store({ request, response }) {
-    const token = request.header("authorization");
     const { FormData } = request.only(["FormData"]);
 
     try {
-      const verified = seeToken(token);
-
-      if (verified.role === "Franquia") {
-        throw new Error('Usuário não autorizado');
-      }
-
       await Database.insert({
         A1_GRPVEN: String(FormData.GrpVen).trim().substring(0, 6),
         A1_COD: String(FormData.CodTOTVs).trim().substring(0, 50),
@@ -167,15 +260,73 @@ class FranquiasController {
         ClienteStatus: 'A'
       }).into('dbo.Cliente')
 
+      await Database.insert({
+        GrpVen: String(FormData.GrpVen).trim().substring(0, 6),
+        DepId: 1,
+        DepNome: 'CENTRAL',
+        DepTipo: null,
+        Inativo: null,
+        DepDL: null
+      }).into('dbo.Deposito')
+
       response.status(200).send();
     } catch (err) {
       response.status(400).send();
       logger.error({
-        token: token,
+        token: null,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'FranquiasController.Store',
+      })
+    }
+  }
+
+  async Update({ request, response, params }) {
+    const grpven = params.grpven
+    const res = params.res
+    const { payload } = request.only(['payload'])
+
+    try {
+      switch (res) {
+
+        case 'limite':
+          await Database.table("dbo.FilialEntidadeGrVenda")
+            .where({
+              A1_GRPVEN: grpven
+            })
+            .update({
+              LimiteCredito: payload.Limite === null || String(payload.Limite).trim() === '' || typeof payload.Limite == 'undefinde' ? 0 : payload.Limite,
+            });
+
+          response.status(200).send()
+          break;
+        case 'limiteextra':
+          await Database.table("dbo.FilialEntidadeGrVenda")
+            .where({
+              A1_GRPVEN: grpven
+            })
+            .update({
+              LimExtraCredito: payload.LimiteExtra === null || String(payload.LimiteExtra).trim() === '' || typeof payload.LimiteExtra == 'undefinde' ? 0 : payload.LimiteExtra,
+              DtExtraCredito: payload.ValidadeLimiteExtra
+            });
+
+          response.status(200).send()
+          break;
+        default:
+          response.status(400).send('parametros inválidos')
+          return
+      }
+
+
+    } catch (err) {
+      response.status(400).send();
+      logger.error({
+        token: null,
+        params: params,
+        payload: request.body,
+        err: err.message,
+        handler: 'FranquiasController.Update',
       })
     }
   }
@@ -184,3 +335,9 @@ class FranquiasController {
 module.exports = FranquiasController;
 
 const QUERY_TODAS_FILIAIS = "select A1_GRPVEN, A1_COD, M0_CODFIL, GrupoVenda, M0_FILIAL, M0_CGC, NREDUZ, Inatv, Consultor, UF, DtCadastro from dbo.FilialEntidadeGrVenda where A1_GRPVEN <> '990201' and A1_GRPVEN <> '990203' and A1_GRPVEN <> '000000' order by M0_CODFIL"
+const QUERY_FEGV = "select Consultor, Inatv, [STATUS], A1_COD, MaxLeads, EmiteNF, LimiteCredito, LimExtraCredito, DtExtraCredito, VlrMinCompra, Confiavel, Retira, CondPag from dbo.FilialEntidadeGrVenda where A1_GRPVEN = ?"
+const QUERY_FEE = "select Razão_Social, A1_SATIV1, CNPJ, Email, DDD, Fone, Logradouro, Número, Complemento, Bairro, CEP, Município, UF, TPessoa from dbo.Cliente where A1_COD = ? and GrpVen = ?"
+const QUERY_CLIENTES_DIST = "select ClienteStatus as Status, COUNT(ClienteStatus) as Qtd from dbo.Cliente where GrpVen = ? group by ClienteStatus"
+const QUERY_EQUIPAMENTOS = "select 'Max' as PdvStatus, COUNT(EquiCod) as Qtd from dbo.Equipamento where GrpVen = ? union select P.PdvStatus as E, COUNT(*) as Qtd from dbo.Equipamento as E left join ( SELECT dbo.PontoVenda.EquiCod, dbo.PontoVenda.PdvStatus, dbo.PontoVenda.DepId, dbo.Cliente.Nome_Fantasia, dbo.Cliente.CNPJss, dbo.PontoVenda.AnxId, dbo.PontoVenda.PdvId, dbo.Cliente.CNPJn, dbo.Deposito.DepNome FROM ( ( dbo.Cliente INNER JOIN dbo.Contrato ON (dbo.Cliente.CNPJ = dbo.Contrato.CNPJ) AND (dbo.Cliente.GrpVen = dbo.Contrato.GrpVen) ) INNER JOIN dbo.Anexos ON (dbo.Contrato.CNPJ = dbo.Anexos.CNPJ) AND (dbo.Contrato.ConId = dbo.Anexos.ConId) AND (dbo.Contrato.GrpVen = dbo.Anexos.GrpVen) ) INNER JOIN dbo.PontoVenda ON (dbo.Anexos.AnxId = dbo.PontoVenda.AnxId) AND (dbo.Anexos.GrpVen = dbo.PontoVenda.GrpVen) INNER JOIN dbo.Deposito on dbo.Deposito.DepId = dbo.PontoVenda.DepId and dbo.Deposito.GrpVen = dbo.PontoVenda.GrpVen WHERE ( ((dbo.Cliente.GrpVen) = ?) AND ((dbo.PontoVenda.PdvStatus) = 'A') ) ) as P on E.EquiCod = P.EquiCod where E.GrpVen = ? group by P.PdvStatus"
+const QUERY_LEIT_STATUS = "select B.EquiCod, B.LeitOk, P.PdvLogradouroPV as Logradouro, P.PdvNumeroPV as Numero, P.PdvComplementoPV as Complemento, P.PdvBairroPV as Bairro, P.PdvCidadePV as Municipio, P.PdvUfPV as UF, P.PdvCEP as CEP from dbo.bogf_Leituras_QtdGrpT as B left join dbo.PontoVenda as P on P.EquiCod = B.EquiCod and P.PdvStatus = 'A' where B.GrpVen = ?"
+const QUERY_BLOQUEADO = "SELECT IIF(SUM(SE1_GrpVen.E1_SALDO) > 0, 'S', 'N') as Bloqueado FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) AND (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc where SE1_GrpVen.GrpVen = ? and CAST(DtVenc as date) < CAST(GETDATE() as date) and (SE1_Class.E1Desc = 'Compra' or SE1_Class.E1Desc = 'Royalties')";

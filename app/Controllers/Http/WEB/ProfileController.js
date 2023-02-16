@@ -43,7 +43,7 @@ class ProfileController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ProfileController.Show',
       })
     }
@@ -92,7 +92,7 @@ class ProfileController {
           token: token,
           params: null,
           payload: request.body,
-          err: err,
+          err: err.message,
           handler: 'ProfileController.ChangePassword',
         })
       }
@@ -104,7 +104,8 @@ class ProfileController {
     const { email } = request.only(["email"]);
 
     if (email === "" || email === null || typeof email == "undefined") {
-      throw Error;
+      response.status(400).send('Email inválido')
+      return
     }
 
     try {
@@ -124,7 +125,7 @@ class ProfileController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ProfileController.ChangeEmail',
       })
     }
@@ -159,7 +160,7 @@ class ProfileController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ProfileController.ChangeTax',
       })
     }

@@ -7,6 +7,7 @@ const Route = use("Route");
 Route.get("/", function () {
   return { message: "API Funcionando!" };
 })
+Route.get("/temp/:dl", "MODS/AwsController.temp")
 
 //Integração com API TOTVS
 Route.get("/tel/update/:filial/:equicod", "MODS/Sl2TelController.Update");
@@ -16,7 +17,8 @@ Route.get("/ativo/qrcode/:ativo", "MODS/SLaplicIntController.ReturnQRCode");
 //AWS
 Route.get("/vpn/files/:type", "MODS/AwsController.Show").middleware(['jwt', 'vld:0,1']);
 Route.get("/vpn/pin", "MODS/AwsController.See").middleware(['jwt', 'vld:0,1']);
-Route.get("/pedidos/compra/sync", "MODS/AwsController.Gato")
+Route.get("/aws/sync/compras", "MODS/AwsController.GatoCompras")
+Route.get("/aws/sync/leituras", "MODS/AwsController.GatoLeituras")
 
 //Disparar Emails
 Route.get("/emails/history", "ADMIN/MailerController.Show").middleware(['jwt', 'vld:1,1'])
@@ -59,10 +61,10 @@ Route.get("/compras/produtos", "WEB/CompraController.Produtos").middleware(['jwt
 Route.get("/compras/contas", "WEB/CompraController.Contas").middleware(['jwt', 'vld:0,1']); //retorna lista de produtos compraveis
 Route.get("/compras/pedidos", "WEB/CompraController.Pedidos").middleware(['jwt', 'vld:0,1']); //retorna pedidos atendidos e abertos do cliente
 Route.get("/compras/pedidos/detalhes/:ID/:STATUS", "WEB/CompraController.PedidoDet").middleware(['jwt', 'vld:0,1']); //retorna detalhes do pedido
-Route.delete("/compras/pedidos/cancelar/:ID", "WEB/CompraController.Cancelar").middleware(['jwt', 'vld:0,1']); //retorna detalhes do pedido
+Route.delete("/compras/pedidos/cancelar/:ID", "WEB/CompraController.Cancelar").middleware(['jwt', 'vld:0,1']); //cancela pedido de compra
 Route.get("/compras/retriveboleto/:ID/:P", "WEB/CompraController.RetriveBoleto").middleware(['jwt', 'vld:0,1']); //retorna o pdf do pedido
 Route.get("/compras/retrivenfe/:ID", "WEB/CompraController.RetriveNota").middleware(['jwt', 'vld:0,1']); //retorna o pdf do pedido
-Route.post("/compras/comprar", "WEB/CompraController.Comprar").middleware(['jwt', 'vld:0,1']); //retorna detalhes do pedido
+Route.post("/compras/comprar", "WEB/CompraController.Comprar").middleware(['jwt', 'vld:0,1']); //comprar items
 Route.post("/compras/duplicatas/report/", "WEB/CompraController.Compensar").middleware(['jwt', 'vld:0,1']); //salva arquivo de duplicatas
 Route.get("/compras/pedidos/PDF/detalhes/:pedidoid/:status", "WEB/CompraController.GenPDFCompra").middleware(['jwt', 'vld:0,1']); //retorna pdf de venda
 Route.get("/compras/faturamento/rotas/:CEP", "WEB/CompraController.ConsultaRota").middleware(['jwt', 'vld:0,1']); //retorna previsão de faturamento e rota
@@ -92,7 +94,7 @@ Route.get("/equip/requests/own", "WEB/EquipRequestController.Show").middleware([
 Route.get("/equip/requests/adresses", "WEB/EquipRequestController.See").middleware(['jwt', 'vld:0,1']); //retorna endereços, máquinas, configurações
 Route.get("/equip/requests/default/:id", "WEB/EquipRequestController.SearchDefaultConfig").middleware(['jwt', 'vld:0,1']); //busca as configurações padrão da máquina
 Route.get("/equip/requests/retrive/:osid", "WEB/EquipRequestController.RetriveOS").middleware(['jwt', 'vld:0,1']); //retorna o PDF da OS
-Route.get("/equip/payment/card/information", "WEB/EquipRequestController.GetCardInformation").middleware(['jwt', 'vld:0,1']); //retorna informações do sistema de pagamento cartão
+Route.get("/equip/payment/information/:type", "WEB/EquipRequestController.GetInformation").middleware(['jwt', 'vld:0,1']); //retorna informações do sistema de pagamento cartão
 Route.post("/equip/requests", "WEB/EquipRequestController.Store").middleware(['jwt', 'vld:0,1']); //Solicita maquina
 
 //Administração das Solicitações de Equipamento
@@ -104,6 +106,8 @@ Route.put("/equip/requests/admin", "WEB/EquipRequestController.SistemOptions").m
 
 //Franquia
 Route.get("/administrar/franquia", "ADMIN/FranquiasController.Show").middleware(['jwt', 'vld:1,1']);
+Route.get("/administrar/franquia/:grpven/:res", "ADMIN/FranquiasController.See").middleware(['jwt', 'vld:1,1']);
+Route.put("/administrar/franquia/:grpven/:res", "ADMIN/FranquiasController.Update").middleware(['jwt', 'vld:1,1']);
 Route.post("/administrar/franquia", "ADMIN/FranquiasController.Store").middleware(['jwt', 'vld:1,1']);
 
 //Formulário de futuros franqueados
@@ -131,6 +135,7 @@ Route.put("/monitor/telemetrias/chamado", "WEB/MonitorController.FecharChamado")
 
 //Consulta Coletas
 Route.get("/coletas", "WEB/ConsultaColetasController.Show").middleware(['jwt', 'vld:0,1']); //retorna todas as coletas do franqueado
+Route.post("/coletas/pdf/:anxid/:pdvid/:fseq", "WEB/ConsultaColetasController.GenPDF").middleware(['jwt', 'vld:0,1']); //gera pdf
 Route.get("/coletas/detalhes/:anxid/:pdvid/:fseq", "WEB/ConsultaColetasController.See").middleware(['jwt', 'vld:0,1']); //retorna dados da coleta
 Route.get("/coletas/detalhes/minimo/:Equicod", "WEB/ConsultaColetasController.CalcMin").middleware(['jwt', 'vld:0,1']); //retorna dados para calculo de minimo
 Route.get("/coletas/historico/:equicod/:anxid", "WEB/ConsultaColetasController.NovaColetaOptions").middleware(['jwt', 'vld:0,1']); //retorna info sobre a última coleta do eq
@@ -140,6 +145,7 @@ Route.delete("/coletas/detalhes/apagar/:EquiCod/:AnxId/:PdvId/:FfmSeq", "WEB/Con
 
 //Aponta Consumo
 Route.get("/consumo/leituras/:anxid/:equicod/:ref", "WEB/ApontaConsumoController.Leituras").middleware(['jwt', 'vld:0,1']);
+Route.get("/consumo/excel/:anxid/:pdvid/:letini/:letenc", "WEB/ApontaConsumoController.GenExcel").middleware(['jwt', 'vld:0,1']);
 Route.get("/consumo/:anxid/:pdvid/:depid/:ref/:equicod/:letini/:letenc", "WEB/ApontaConsumoController.See").middleware(['jwt', 'vld:0,1']);
 Route.post("/consumo/gravar/:depid/:ref", "WEB/ApontaConsumoController.Store").middleware(['jwt', 'vld:0,1']);
 Route.delete("/consumo/apagar/:depid/:ref/:equicod/:doc", "WEB/ApontaConsumoController.Destroy").middleware(['jwt', 'vld:0,1']);
@@ -157,7 +163,11 @@ Route.post('/contracts/upload', "WEB/ContractController.Upload").middleware(['jw
 Route.get('/deposits', "WEB/DepositsController.Show").middleware(['jwt', 'vld:0,1'])
 
 //Receitas
+Route.get('/receita', 'WEB/RecipesController.Show').middleware(['jwt', 'vld:0,1']);
 Route.get('/receita/:recid', "WEB/RecipesController.See").middleware(['jwt', 'vld:0,1'])
+Route.post('/receita', "WEB/RecipesController.Store").middleware(['jwt', 'vld:0,1'])
+Route.put('/receita', "WEB/RecipesController.Update").middleware(['jwt', 'vld:0,1'])
+Route.put('/receita/inativar', "WEB/RecipesController.Inativar").middleware(['jwt', 'vld:0,1'])
 
 //Inventario
 Route.get('/inventario/:depid/:ref/:zerados', "WEB/InventoryController.Show").middleware(['jwt', 'vld:0,1'])
@@ -175,6 +185,13 @@ Route.put("/pontosdevenda/atualizar/:pdvid/:anxid/:type", "WEB/PontosDeVendaCont
 Route.get('/pedidos/compra/integracao', 'ADMIN/PedidosDeCompraController.Integrar').middleware(['jwt', 'vld:1,1']);
 Route.get('/pedidos/compra/:diff', 'ADMIN/PedidosDeCompraController.Show').middleware(['jwt', 'vld:1,1']);
 Route.put('/pedidos/compra/', 'ADMIN/PedidosDeCompraController.Update').middleware(['jwt', 'vld:1,1']);
+
+//Pedidos de venda
+Route.get('/pedidos/venda/', 'ADMIN/PedidosDeVendaController.Show').middleware(['jwt', 'vld:1,1']);
+Route.put('/pedidos/venda/cancelar', 'ADMIN/PedidosDeVendaController.CancelRequest').middleware(['jwt', 'vld:1,1']);
+Route.put('/pedidos/venda/desprocessar', 'ADMIN/PedidosDeVendaController.DeprocessSale').middleware(['jwt', 'vld:1,1']);
+Route.put('/pedidos/venda/reprocessar', 'ADMIN/PedidosDeVendaController.ReissueOrder').middleware(['jwt', 'vld:1,1']);
+Route.put('/pedidos/venda/descartar', 'ADMIN/PedidosDeVendaController.CancelSale').middleware(['jwt', 'vld:1,1']);
 
 //quebra galho
 Route.get("/SLAPLIC/ATT", "MODS/SLaplicIntController.AttSLAPLIC"); //baixa a versão mais recente do SLAplic
@@ -203,3 +220,10 @@ Route.put('/dre', 'WEB/DreController.UpdateDRE').middleware(['jwt', 'vld:0,1']);
 Route.put('/dov', 'WEB/DreController.UpdateDOV').middleware(['jwt', 'vld:0,1']);
 Route.get('/dre/excel/baseroy/:ano/:mes', 'WEB/DreController.GenExcelBaseRoyalties').middleware(['jwt', 'vld:0,1']);
 Route.get('/dre/excel/dre/:ano/:mes', 'WEB/DreController.GenExcelDRE').middleware(['jwt', 'vld:0,1']);
+
+
+// SLRaspy
+Route.get('/raspy', 'WEB/SLRaspyController.Show').middleware(['jwt', 'vld:0,1']);
+Route.get('/raspy/excel/:anxid/:p1/:p2', 'WEB/SLRaspyController.GerarExcel').middleware(['jwt', 'vld:0,1']);
+Route.get('/raspy/:anxid', 'WEB/SLRaspyController.Leituras').middleware(['jwt', 'vld:0,1']);
+Route.get('/raspy/:anxid/:p1/:p2', 'WEB/SLRaspyController.See').middleware(['jwt', 'vld:0,1']);

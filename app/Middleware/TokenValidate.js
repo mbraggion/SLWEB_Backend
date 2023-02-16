@@ -11,29 +11,31 @@ class TokenValidate {
    * @param {Request} ctx.request
    * @param {Function} next
    */
-  async handle({ request, response }, next) {
+  async handle({ request, response, params }, next) {
     const token = request.header('authorization')
     try {
       if (!token) {
-        throw new Error('token não fornecido')
+        response.status(498).send('token não fornecido')
+        return
       }
 
       const verified = seeToken(token)
 
-      if(!verified.grpven){
-        throw new Error('token inválido')
+      if (!verified.grpven) {
+        response.status(498).send('token inválido')
+        return
       }
 
       await next()
     } catch (err) {
-      response.status(498).send()
-      // logger.error({
-      //   token: token,
-      //   params: null,
-      //   payload: request.body,
-      //   err: err,
-      //   handler: 'TokenValidate.handle',
-      // })
+      response.status(498).send('Erro')
+      logger.error({
+        token: token,
+        params: params,
+        payload: request.body,
+        err: err.message,
+        handler: 'TokenValidate.handle',
+      })
     }
   }
 }

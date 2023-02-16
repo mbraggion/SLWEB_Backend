@@ -40,7 +40,7 @@ class ContractController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Show',
       })
     }
@@ -80,7 +80,10 @@ class ContractController {
               .from('dbo.Cliente')
               .where({ CNPJ: CNPJ })
 
-            if (info.length === 0) throw new Error('Cliente para anexo não encontrado')
+            if (info.length === 0) {
+              response.status(400).send('Cliente para anexo não encontrado')
+              return
+            }
 
             newAnx = {
               GrpVen: verified.grpven,
@@ -151,7 +154,8 @@ class ContractController {
             }
           });
         default:
-          throw new Error('entidade para query não identificada')
+          response.status(400).send('entidade para query não identificada')
+          return
       }
     } catch (err) {
       response.status(400).send();
@@ -159,7 +163,7 @@ class ContractController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.See',
       })
     }
@@ -279,7 +283,7 @@ class ContractController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Store',
       })
     }
@@ -358,7 +362,8 @@ class ContractController {
 
           return response.status(200).send();
         default:
-          throw new Error('entidade para query não identificada')
+          response.status(400).send('entidade para query não identificada')
+          return
       }
     } catch (err) {
       response.status(400).send();
@@ -366,7 +371,7 @@ class ContractController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Update',
       })
     }
@@ -437,7 +442,7 @@ class ContractController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Upload',
       })
     }
@@ -459,7 +464,7 @@ class ContractController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Download',
       })
     }
@@ -485,7 +490,8 @@ class ContractController {
           })
 
         if (usado.length > 0) {
-          throw new Error('Contrato está em uso')
+          response.status(400).send('Contrato está em uso')
+          return
         } else {
           await Database.table("dbo.Contrato")
             .where({
@@ -516,7 +522,7 @@ class ContractController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ContractController.Inativar',
       })
     }

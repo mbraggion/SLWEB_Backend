@@ -3,8 +3,25 @@
 const Database = use("Database");
 const { seeToken } = require("../../../Services/jwtServices");
 const moment = require("moment");
+const Helpers = use("Helpers");
 const logger = require("../../../../dump/index")
+const PdfPrinter = require("pdfmake");
+const fs = require("fs");
+const toArray = require('stream-to-array')
+const { PDFGen } = require('../../../../resources/pdfModels/relatorioColeta')
+
 moment.locale("pt-br");
+
+var fonts = {
+  Roboto: {
+    normal: Helpers.resourcesPath("fonts/OpenSans-Regular.ttf"),
+    bold: Helpers.resourcesPath("fonts/OpenSans-Bold.ttf"),
+    italics: Helpers.resourcesPath("fonts/OpenSans-RegularItalic.ttf"),
+    bolditalics: Helpers.resourcesPath("fonts/OpenSans-BoldItalic.ttf"),
+  },
+};
+
+const printer = new PdfPrinter(fonts);
 
 class ConsultaColetasController {
   /** @param {object} ctx
@@ -30,7 +47,7 @@ class ConsultaColetasController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.Show',
       })
     }
@@ -56,7 +73,7 @@ class ConsultaColetasController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.See',
       })
     }
@@ -91,7 +108,7 @@ class ConsultaColetasController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.CalcMin',
       })
     }
@@ -126,7 +143,7 @@ class ConsultaColetasController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.NovaColetaOptions',
       })
     }
@@ -179,7 +196,7 @@ class ConsultaColetasController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.CalcColetas',
       })
     }
@@ -261,7 +278,7 @@ class ConsultaColetasController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.GravaColeta',
       })
     }
@@ -303,8 +320,66 @@ class ConsultaColetasController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'ConsultaColetasController.Delete',
+      })
+    }
+  }
+
+  async GenPDF({ request, response, params }) {
+    const token = request.header("authorization");
+    let { faturar } = request.only(['faturar'])
+    const AnxId = params.anxid
+    const PdvId = params.pdvid
+    const FSeq = params.fseq
+
+    const path = Helpers.publicPath(`/tmp`);
+    const PathWithName = `${path}/${AnxId}-${PdvId}-${FSeq}.pdf`;
+
+    try {
+      const verified = seeToken(token);
+
+      const FDAnt = await Database.raw(`SELECT FD.PvpSel as Sel, P.Produto, 0 as "C.I", FD.FfdPago as "C.F", FD.FfdQtdFaturar as Consumo, FD.PvpVvn1 as "Vlr. Un.", (FD.FfdQtdFaturar * FD.PvpVvn1) as "Vlr. Total" FROM FichFatD as FD inner join dbo.Produtos as P on FD.ProdId = P.ProdId WHERE FD.AnxId = ? AND FD.PdvId = ? AND FD.FfmSeq = ? and FD.GrpVen = ?`, [AnxId, PdvId, Number(FSeq) - 1, verified.grpven])
+      let FD = await Database.raw(`SELECT FD.PvpSel as Sel, P.ProdId, P.Produto, 0 as "C.I", FD.FfdPago as "C.F", FD.FfdQtdFaturar as Consumo, FD.PvpVvn1 as "Vlr. Un.", (FD.FfdQtdFaturar * FD.PvpVvn1) as "Vlr. Total" FROM FichFatD as FD inner join dbo.Produtos as P on FD.ProdId = P.ProdId WHERE FD.AnxId = ? AND FD.PdvId = ? AND FD.FfmSeq = ? and FD.GrpVen = ?`, [AnxId, PdvId, FSeq, verified.grpven])
+      const FM = await Database.raw("select FfmDtColetaAnt, FfmDtColeta, FfmCNTAnt, FfmCNT, FfmRef from FichFatM where GrpVen = ? and AnxId = ? and PdvId = ? and FfmSeq = ?", [verified.grpven, AnxId, PdvId, FSeq])
+      const PDV = await Database.raw("select C.Nome_Fantasia, P.EquiCod, P.EQUIPMOD_Desc, P.PdvLogradouroPV, P.PdvNumeroPV, P.PdvComplementoPV, PdvBairroPV, P.PdvCidadePV, P.PdvUfPV, P.PdvCEP from dbo.PontoVenda as P inner join dbo.Cliente as C on C.CNPJ = P.CNPJ and C.GrpVen = P.GrpVen where P.PdvId = ? and P.AnxId = ? and P.GrpVen = ?", [PdvId, AnxId, verified.grpven])
+      const PVPROD = await Database.raw("select PV.PvpSel, P.ProdId, P.Produto, TV.TveDesc, PV.PvpVvn1 from dbo.PVPROD as PV inner join dbo.Produtos as P on PV.ProdId = P.ProdId inner join dbo.TipoVenda as TV on PV.TveId = TV.TveId where GrpVen = ? and PdvId = ? and AnxId = ?", [verified.grpven, PdvId, AnxId])
+
+      FD = FD.map((f, i) => ({
+        ...f,
+        ["C.I"]: FDAnt.filter(w => w.Sel === f.Sel)[0] ? FDAnt.filter(w => w.Sel === f.Sel)[0]["C.F"] : 0
+      }))
+
+      const produtos = await Database
+      .select('Produto', 'ProdId')
+      .from('dbo.Produtos')
+
+      faturar = faturar.map(f => {
+        return {
+          ...f,
+          Produto: produtos.filter(PD => String(PD.ProdId) === String(f.ProdId))[0].Produto
+        }
+      })
+
+      const PDFModel = PDFGen(FD, FM[0], PDV[0], PVPROD, faturar);
+
+      var pdfDoc = printer.createPdfKitDocument(PDFModel);
+      pdfDoc.pipe(fs.createWriteStream(PathWithName));
+      pdfDoc.end();
+
+      const enviarDaMemóriaSemEsperarSalvarNoFS = await toArray(pdfDoc).then(parts => {
+        return Buffer.concat(parts);
+      })
+
+      response.status(200).send(enviarDaMemóriaSemEsperarSalvarNoFS)
+    } catch (err) {
+      response.status(400).send()
+      logger.error({
+        token: token,
+        params: params,
+        payload: request.body,
+        err: err.message,
+        handler: 'ConsultaColetasController.GenPDF',
       })
     }
   }

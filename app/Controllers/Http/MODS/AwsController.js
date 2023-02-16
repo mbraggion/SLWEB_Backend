@@ -1,7 +1,26 @@
 "use strict";
 const Database = use("Database");
 const Drive = use("Drive");
+const jwt = require("jsonwebtoken");
+const fs = require("fs");
 const { seeToken } = require('../../../Services/jwtServices')
+const { spawn } = require('child_process');
+const Helpers = use("Helpers");
+const QRCode = require('qrcode');
+const { joinImages } = require('join-images')
+const PdfPrinter = require("pdfmake");
+const { PDFGen } = require('../../../../resources/pdfModels/loteQRCode')
+
+var fonts = {
+  Roboto: {
+    normal: Helpers.resourcesPath("fonts/OpenSans-Regular.ttf"),
+    bold: Helpers.resourcesPath("fonts/OpenSans-Bold.ttf"),
+    italics: Helpers.resourcesPath("fonts/OpenSans-RegularItalic.ttf"),
+    bolditalics: Helpers.resourcesPath("fonts/OpenSans-BoldItalic.ttf"),
+  },
+};
+
+const printer = new PdfPrinter(fonts);
 
 const logger = require("../../../../dump/index")
 
@@ -29,7 +48,7 @@ class AwsController {
         token: token,
         params: params,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'AwsController.Show',
       })
     }
@@ -56,13 +75,13 @@ class AwsController {
         token: token,
         params: null,
         payload: request.body,
-        err: err,
+        err: err.message,
         handler: 'AwsController.See',
       })
     }
   }
 
-  async Gato({ response }) {
+  async GatoCompras({ response }) {
     try {
       let pedidosPendentesNaAWS = await Database.connection("mssql").raw("SELECT * FROM dbo.PedidosVenda WHERE CodigoTotvs is null and STATUS is null and Filial = '0201' and DataCriacao >= '2022-11-03 00:00:00.000'")
       let pedidosPendentesNaAWSMasQueJaSubiramPraPilao = []
@@ -195,7 +214,21 @@ class AwsController {
       }
 
       if (contInsert > 0) {
-        await Database.connection("mssql").raw("INSERT INTO SLCafes.SLAPLIC.dbo.PedidosCompraCab ( [GrpVen], [PedidoId], [STATUS], [Filial], [CpgId], [DataCriacao], [DataIntegracao], [NroNF], [SerieNF], [DtEmissNF], [ChaveNF], [MsgNF], [C5NUM] ) SELECT * from dbo.PedidosCompraCab where dbo.PedidosCompraCab.PedidoId not in ( select PedidoId from SLCafes.SLAPLIC.dbo.PedidosCompraCab )")
+        // await Database.connection("mssql").raw("INSERT INTO SLCafes.SLAPLIC.dbo.PedidosCompraCab ( [GrpVen], [PedidoId], [STATUS], [Filial], [CpgId], [DataCriacao], [DataIntegracao], [NroNF], [SerieNF], [DtEmissNF], [ChaveNF], [MsgNF], [C5NUM] ) SELECT * from dbo.PedidosCompraCab where dbo.PedidosCompraCab.PedidoId not in ( select PedidoId from SLCafes.SLAPLIC.dbo.PedidosCompraCab )")
+
+        var ls = spawn(Helpers.publicPath('Carga_Pedidos_Compra_Para_TOTVs.bat'))
+
+        ls.stdout.on('data', function (data) {
+          console.log('execução: ' + data);
+        })
+
+        ls.stderr.on('data', function (data) {
+          console.log('erro: ' + data);
+        })
+
+        ls.on('exit', function (code) {
+          console.log('child process exited with code: ' + code);
+        })
       }
 
       response.status(200).send({
@@ -209,6 +242,79 @@ class AwsController {
       response.status(400).send({
         error: err.message
       })
+    }
+  }
+
+  async GatoLeituras({ response }) {
+    try {
+      // executar proc no 248
+      await Database.connection("old_mssql").raw("execute dbo.sp_SLTELLeituraApp")
+
+      // copiar leituras pra aws
+      await Database.connection("mssql").raw("insert into SLAPLIC.dbo.SLTELLeitura select * from SLCafes.SLAPLIC.dbo.SLTELLeitura where LeituraId not in ( select LeituraId from SLAPLIC.dbo.SLTELLeitura )")
+
+      response.status(200).send()
+    } catch (err) {
+      response.status(400).send({
+        error: err.message
+      })
+    }
+  }
+
+  async temp({ response, params }) {
+    const DL = params.dl
+
+    try {
+      const arrayWithEquipNumbers = await Database
+        .select('N1_CHAPA')
+        .from('SLCafes.SLAPLIC.dbo.SN1SZ2_QRCode')
+        .map(item => item.N1_CHAPA)
+
+      let savedFiles = [[]]
+      let savedEqs = [[]]
+
+      const qrsPorLinha = 5
+      
+      // const finalPathName = Helpers.publicPath(`/tmp/qrcode_auto_full.png`);
+      const finalPathName = Helpers.publicPath(`/tmp/qrcode_auto_full.pdf`);
+
+      // gero um QR code pra cada numero de ativo
+      for (const eq of arrayWithEquipNumbers) {
+        let eqFixed = String(eq).trim()
+        const filename = Helpers.publicPath(`/tmp/qrcode_auto_${eqFixed}.png`)
+
+        await QRCode.toFile(
+          filename,
+          eqFixed,
+          {
+            margin: 1
+          }
+        )
+
+        if (savedFiles[savedFiles.length - 1].length < qrsPorLinha) {
+          savedFiles[savedFiles.length - 1].push(filename)
+          savedEqs[savedEqs.length - 1].push(eqFixed)
+        } else {
+          savedFiles.push([filename])
+          savedEqs.push([eqFixed])
+        }
+      }
+
+      const PDFModel = PDFGen(savedFiles, savedEqs, qrsPorLinha);
+
+      var pdfDoc = printer.createPdfKitDocument(PDFModel);
+      pdfDoc.pipe(fs.createWriteStream(finalPathName));
+      pdfDoc.end();
+
+      for (const linha of savedFiles) {
+        for(const index in linha){
+          await Drive.delete(linha[index])
+        }
+      }
+
+      response.status(200).attachment(finalPathName, 'QRCODE.png')
+    } catch (err) {
+      response.status(400).send({ message: err })
     }
   }
 }
