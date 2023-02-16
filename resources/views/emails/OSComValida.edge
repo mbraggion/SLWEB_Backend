@@ -1,11 +1,13 @@
 <h2>Olá,</h2>
-<h4>um pedido de máquina foi validado pelo departamento comercial da Pilão.</h4>
+<h3>Um pedido de máquina foi validado pelo departamento comercial da Pilão Professional.</h3>
 
 <p>Em anexo você encontrará uma copia em PDF desta solicitação</p>
-<p>
-    Numero da OS: <strong>{{ ID }}.</strong>
-</p>
-<p>Data esperada pelo cliente: {{ Dt }}</p>
+<label> Numero da OS: <strong>{{ ID }}.</strong> </label><br/>
+<label> Requerente: <strong>{{ franqueado }}.</strong> </label><br/>
+<label>Data esperada pelo cliente: {{ Dt }}</label><br/><br/>
+
+<label>Sistema de pagamento solicitado: <strong>{{ sispag }}</strong></label><br/>
+<label>A máquina deverá acompanhar <strong>{{ acomp }}</strong></label><br/><br/>
 
 <label>Solicitação aguarda a aprovação da <strong>técnica</strong> para seguir para a preparação.</label>
 <label>Acesse o <a href='{{ Frontend }}'>SLWEB</a> para gerenciar a requisição.</label>

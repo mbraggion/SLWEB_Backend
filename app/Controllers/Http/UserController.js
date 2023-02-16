@@ -14,20 +14,27 @@ class UserController {
     try {
       //testa usuario + senha informados
       const token = await genToken(user_code, password);
+      const verified = await seeToken(token.token)
 
-      const DeveConfirmacao = await Database
+      const DeveConfirmacaoLocalizacao = await Database
         .select('Equip')
         .from('dbo.FilialEntidadeGrVenda')
         .where({
           M0_CODFIL: user_code
         })
 
-      const links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [user_code, process.env.NODE_ENV, user_code] : [user_code, user_code])
+      const DeveConfirmacaoDeRecebimento = await Database
+        .raw(
+          "select * from OSCtrl where OSCStatus = 'Ativo' and GrpVen = ? and OSCExpDtPrevisao is not null and OSCExpDtPrevisao < GETDATE()",
+          [verified.grpven]
+        )
+
+      const links = await GetLinks(user_code)
 
       let linksEmSessões = []
 
       links.filter(LS => {
-        if (DeveConfirmacao[0].Equip === 'S') {
+        if (DeveConfirmacaoLocalizacao[0].Equip === 'S' || DeveConfirmacaoDeRecebimento.length > 0) {
           if (LS.Bloqueavel === true) {
             return false
           } else {
@@ -50,13 +57,13 @@ class UserController {
       });
     } catch (err) {
       response.status(401).send();
-      logger.error({
-        token: null,
-        params: null,
-        payload: request.body,
-        err: err.message,
-        handler: 'UserController.Login',
-      })
+      // logger.error({
+      //   token: null,
+      //   params: null,
+      //   payload: request.body,
+      //   err: err.message,
+      //   handler: 'UserController.Login',
+      // })
     }
   }
 
@@ -69,6 +76,7 @@ class UserController {
       if (checkUser.length < 1) {
         //se não encontrar o codigo do franqueado
         response.status(400).send();
+        return
       } else {
         //se encontrar o codigo do franqueado
 
@@ -107,7 +115,7 @@ class UserController {
     try {
       const token = await genTokenAdm(admin_code, admin_password)
 
-      const links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [admin_code, process.env.NODE_ENV, admin_code] : [admin_code, admin_code])
+      const links = await GetLinks(admin_code)
 
       let linksEmSessões = []
 
@@ -122,13 +130,13 @@ class UserController {
       response.status(202).send({ ...token, Links: linksEmSessões.filter(LS => LS !== null) });
     } catch (err) {
       response.status(401).send();
-      logger.error({
-        token: null,
-        params: null,
-        payload: request.body,
-        err: err.message,
-        handler: 'UserController.AdmPartialLogin',
-      })
+      // logger.error({
+      //   token: null,
+      //   params: null,
+      //   payload: request.body,
+      //   err: err.message,
+      //   handler: 'UserController.AdmPartialLogin',
+      // })
     }
   }
 
@@ -142,7 +150,7 @@ class UserController {
       //crio token com codido do adm, codigo do cliente, senha e nivel do adm
       const admTokenWithFilial = await genTokenAdmWithFilial(user_code, verified);
 
-      const links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [verified.admin_code, process.env.NODE_ENV, verified.admin_code] : [verified.admin_code, verified.admin_code])
+      const links = await GetLinks(verified.admin_code)
 
       let linksEmSessões = []
 
@@ -157,13 +165,13 @@ class UserController {
       response.status(202).send({ ...admTokenWithFilial, Links: linksEmSessões.filter(LS => LS !== null) });
     } catch (err) {
       response.status(400).send();
-      logger.error({
-        token: token,
-        params: null,
-        payload: request.body,
-        err: err.message,
-        handler: 'UserController.AdmFullLogin',
-      })
+      // logger.error({
+      //   token: token,
+      //   params: null,
+      //   payload: request.body,
+      //   err: err.message,
+      //   handler: 'UserController.AdmFullLogin',
+      // })
     }
   }
 
@@ -175,7 +183,7 @@ class UserController {
 
       const admTokenLogout = await genTokenAdmLogout(verified.admin_code, verified.role);
 
-      const links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [verified.admin_code, process.env.NODE_ENV, verified.admin_code] : [verified.admin_code, verified.admin_code])
+      const links = await GetLinks(verified.admin_code)
 
       let linksEmSessões = []
 
@@ -190,13 +198,13 @@ class UserController {
       response.status(202).send({ ...admTokenLogout, Links: linksEmSessões.filter(LS => LS !== null) });
     } catch (err) {
       response.status(400).send();
-      logger.error({
-        token: token,
-        params: null,
-        payload: request.body,
-        err: err.message,
-        handler: 'UserController.AdmLogoutFilial',
-      })
+      // logger.error({
+      //   token: token,
+      //   params: null,
+      //   payload: request.body,
+      //   err: err.message,
+      //   handler: 'UserController.AdmLogoutFilial',
+      // })
     }
   }
 
@@ -235,7 +243,7 @@ class UserController {
 
         const token = await genTokenExternal(code);
 
-        const links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [code, process.env.NODE_ENV, code] : [code, code])
+        const links = await GetLinks(code)
 
         let linksEmSessões = []
 
@@ -268,4 +276,26 @@ class UserController {
 
 module.exports = UserController;
 
-const QUERY_LINKS_DISPONIVEIS = `select L.Descricao, L.Link, L.Sessao, L.Icon, L.AccessLevel, L.Bloqueavel from dbo.SLWEB_Links as L inner join ( select T.* from dbo.Operador as O inner join dbo.TipoOper as T on T.TopeCod = O.TopeCod where M0_CODFIL = ? ) as O on ( L.AccessScale = 0 and L.AccessLevel = O.AccessLevel ) or ( L.AccessScale = 1 and O.AccessLevel >= L.AccessLevel ) or ( L.AccessLevel is null ) where ${process.env.NODE_ENV === 'development' ? '' : 'Ambiente = ? and'} Habilitado = 1 and (ExcludeTopeCod  <> (select TopeCod from dbo.Operador where M0_CODFIL = ?) or ExcludeTopeCod is null) order by Sessao ASC`
+const QUERY_LINKS_DISPONIVEIS = `select L.Descricao, L.Link, L.Sessao, L.Icon, L.AccessLevel, L.Bloqueavel, L.ExcludeTopeCod from dbo.SLWEB_Links as L inner join ( select T.* from dbo.Operador as O inner join dbo.TipoOper as T on T.TopeCod = O.TopeCod where M0_CODFIL = ? ) as O on ( L.AccessScale = 0 and L.AccessLevel = O.AccessLevel ) or ( L.AccessScale = 1 and O.AccessLevel >= L.AccessLevel ) or ( L.AccessLevel is null ) where ${process.env.NODE_ENV === 'development' ? '' : 'Ambiente = ? and'} Habilitado = 1 order by Sessao ASC`
+
+async function GetLinks(user_code) {
+  let links = await Database.raw(QUERY_LINKS_DISPONIVEIS, process.env.NODE_ENV === 'production' ? [user_code, process.env.NODE_ENV] : [user_code])
+  const userTopeCod = await Database.select('TopeCod').from('dbo.Operador').where({ M0_CODFIL: user_code })
+
+  links = links.filter(l => {
+    let excludedOperators = JSON.parse(l.ExcludeTopeCod)
+    // this should be an array!
+
+    if (Array.isArray(excludedOperators)) {
+      if (excludedOperators.includes(Number(userTopeCod[0].TopeCod))) {
+        return false
+      } else {
+        return true
+      }
+    } else {
+      return false
+    }
+  })
+
+  return links
+}

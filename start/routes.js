@@ -21,7 +21,7 @@ Route.get("/aws/sync/compras", "MODS/AwsController.GatoCompras")
 Route.get("/aws/sync/leituras", "MODS/AwsController.GatoLeituras")
 
 //Disparar Emails
-Route.get("/emails/history", "ADMIN/MailerController.Show").middleware(['jwt', 'vld:1,1'])
+Route.get("/emails/history", "ADMIN/MailerController.Show").middleware(['jwt', 'vld:0,1'])
 Route.post("/emails/dispatch/", "ADMIN/MailerController.DispatchEmail").middleware(['jwt', 'vld:1,1'])
 Route.get("/emails/dispatch/", "ADMIN/MailerController.See").middleware(['jwt', 'vld:1,1'])
 
@@ -98,11 +98,12 @@ Route.get("/equip/payment/information/:type", "WEB/EquipRequestController.GetInf
 Route.post("/equip/requests", "WEB/EquipRequestController.Store").middleware(['jwt', 'vld:0,1']); //Solicita maquina
 
 //Administração das Solicitações de Equipamento
-Route.get("/equip/requests/all", "WEB/EquipRequestController.All").middleware(['jwt', 'vld:1,1']); //retorna todas as requisições
-Route.put("/equip/requests/check", "WEB/EquipRequestController.ViewCheck").middleware(['jwt', 'vld:1,1']); //atualiza a data de visualização
-Route.put("/equip/requests/validate", "WEB/EquipRequestController.ValidateOS").middleware(['jwt', 'vld:0,1']); //atualiza a configuração da maquina
-Route.put("/equip/requests/inform", "WEB/EquipRequestController.TecInfEqData").middleware(['jwt', 'vld:1,0']); //atualiza a configuração da maquina
-Route.put("/equip/requests/admin", "WEB/EquipRequestController.SistemOptions").middleware(['jwt', 'vld:4,0']); //adm gerencia a os
+Route.get("/equip/requests/all", "ADMIN/OSGestaoController.All").middleware(['jwt', 'vld:1,1']); //retorna todas as requisições
+Route.put("/equip/requests/check", "ADMIN/OSGestaoController.ViewCheck").middleware(['jwt', 'vld:1,1']); //atualiza a data de visualização
+Route.put("/equip/requests/validate", "ADMIN/OSGestaoController.ValidateOS").middleware(['jwt', 'vld:0,1']); //atualiza a configuração da maquina
+Route.put("/equip/requests/inform/tec", "ADMIN/OSGestaoController.TecInfEqData").middleware(['jwt', 'vld:1,0']); //informa finalização da técnica
+Route.put("/equip/requests/inform/exp", "ADMIN/OSGestaoController.ExpInfEntrega").middleware(['jwt', 'vld:3,0']); //informa detalhes da entrega
+Route.put("/equip/requests/admin", "ADMIN/OSGestaoController.SistemOptions").middleware(['jwt', 'vld:4,0']); //adm gerencia a os
 
 //Franquia
 Route.get("/administrar/franquia", "ADMIN/FranquiasController.Show").middleware(['jwt', 'vld:1,1']);
@@ -120,13 +121,15 @@ Route.get("/form/all", "ADMIN/FuturoFranqueadoController.Show").middleware(['jwt
 Route.get("/form/pdf/:CodCandidato", "ADMIN/FuturoFranqueadoController.GeneratePDF").middleware(['jwt', 'vld:1,1']); //retorna pdf do formulario
 Route.get("/form/zip/:CodCandidato", "ADMIN/FuturoFranqueadoController.GenerateZip").middleware(['jwt', 'vld:1,1']); //retorna zip dos arquivos do formulário
 
-//Dashboard
-Route.get("/dashboard/filiais", "WEB/GeneralController.Filiais").middleware(['jwt', 'vld:1,1']); //retorna pdf do formulario
-Route.get("/dashboard/news", "WEB/GeneralController.ShowNews").middleware(['jwt', 'vld:0,1']); //retorna noticias
-Route.post("/dashboard/news/", "WEB/GeneralController.StoreNews").middleware(['jwt', 'vld:1,1']); //guarda nova noticia
-Route.post("/dashboard/news/check", "WEB/GeneralController.CheckNews").middleware(['jwt', 'vld:0,1']); //da um check que a noticia foi vizualizada
-Route.delete("/dashboard/news/:id", "WEB/GeneralController.DestroyNews").middleware(['jwt', 'vld:1,1']); //inativa uma noticia
-Route.get("/dashboard/block/info", "WEB/GeneralController.CheckPendencias").middleware(['jwt', 'vld:0,1']); //verifica pendencias da filial
+// Dashboard
+Route.get("/dashboard/news", "WEB/DashboardController.ShowNews").middleware(['jwt', 'vld:0,1']); //retorna noticias
+Route.post("/dashboard/news/", "WEB/DashboardController.StoreNews").middleware(['jwt', 'vld:1,1']); //guarda nova noticia
+Route.post("/dashboard/news/check", "WEB/DashboardController.CheckNews").middleware(['jwt', 'vld:0,1']); //da um check que a noticia foi vizualizada
+Route.delete("/dashboard/news/:id", "WEB/DashboardController.DestroyNews").middleware(['jwt', 'vld:1,1']); //inativa uma noticia
+
+// Anything
+Route.get("/any/filiais", "WEB/AnythingController.Filiais").middleware(['jwt', 'vld:1,1']); //retorna pdf do formulario
+Route.get("/any/block/info", "WEB/AnythingController.CheckPendencias").middleware(['jwt', 'vld:0,1']); //verifica pendencias da filial
 
 //Monitor
 Route.get("/monitor/telemetrias", "WEB/MonitorController.Telemetrias").middleware(['jwt', 'vld:0,1']); //Exibe ativos
@@ -224,6 +227,15 @@ Route.get('/dre/excel/dre/:ano/:mes', 'WEB/DreController.GenExcelDRE').middlewar
 
 // SLRaspy
 Route.get('/raspy', 'WEB/SLRaspyController.Show').middleware(['jwt', 'vld:0,1']);
-Route.get('/raspy/excel/:anxid/:p1/:p2', 'WEB/SLRaspyController.GerarExcel').middleware(['jwt', 'vld:0,1']);
+Route.get('/raspy/excel/:anxid/:p1/:p2', 'WEB/SLRaspyController.GenExcel').middleware(['jwt', 'vld:0,1']);
 Route.get('/raspy/:anxid', 'WEB/SLRaspyController.Leituras').middleware(['jwt', 'vld:0,1']);
 Route.get('/raspy/:anxid/:p1/:p2', 'WEB/SLRaspyController.See').middleware(['jwt', 'vld:0,1']);
+
+// Auditoria
+Route.get('/audit/show/:uuid', 'WEB/AuditoriaController.Show')
+Route.get('/audit/excel/:uuid/:anxid/:pdvid/:letini/:letenc', 'WEB/AuditoriaController.GenExcel')
+Route.get('/audit/check/:eqcod', 'WEB/AuditoriaController.See').middleware(['jwt', 'vld:0,1']);
+Route.get('/audit/leitura/:telId', 'WEB/AuditoriaController.SolicitarLeitura')
+Route.post('/audit/', 'WEB/AuditoriaController.Store').middleware(['jwt', 'vld:0,1']);
+Route.put('/audit/update/:uuid', 'WEB/AuditoriaController.Update').middleware(['jwt', 'vld:0,1']);
+Route.delete('/audit/delete/:uuid', 'WEB/AuditoriaController.Destroy').middleware(['jwt', 'vld:0,1']);

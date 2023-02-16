@@ -6,11 +6,13 @@ const Env = use("Env");
 const Helpers = use("Helpers");
 const { seeToken } = require("../../../Services/jwtServices");
 const moment = require("moment");
-const logger = require("../../../../dump/index")
+const logger = require("../../../../dump/index");
 const PdfPrinter = require("pdfmake");
-const toArray = require('stream-to-array')
+const toArray = require("stream-to-array");
 const fs = require("fs");
-const { PDFGen } = require("../../../../resources/pdfModels/detalhesCompra_pdfModel");
+const {
+  PDFGen,
+} = require("../../../../resources/pdfModels/detalhesCompra_pdfModel");
 
 moment.locale("pt-br");
 
@@ -35,16 +37,13 @@ class CompraController {
     try {
       seeToken(token);
 
-      Database.raw('execute dbo.sp_AcertaPedCompra')
-
       const Produtos = await Database.raw(queryProdutos);
 
-      const Desconto = await Database
-        .select('ParamVlr')
-        .from('dbo.Parametros')
+      const Desconto = await Database.select("ParamVlr")
+        .from("dbo.Parametros")
         .where({
-          ParamId: 'DESCONTO_COMPRA_GERAL'
-        })
+          ParamId: "DESCONTO_COMPRA_GERAL",
+        });
 
       let aux = [];
 
@@ -61,8 +60,8 @@ class CompraController {
         params: null,
         payload: request.body,
         err: err.message,
-        handler: 'CompraController.Produtos',
-      })
+        handler: "CompraController.Produtos",
+      });
     }
   }
 
@@ -87,15 +86,22 @@ class CompraController {
       );
 
       // busco pedidos feitos ainda não faturados
-      const PedidosNaoFaturados = await Database.raw(queryPedidosAFaturar, [verified.grpven]);
+      const PedidosNaoFaturados = await Database.raw(queryPedidosAFaturar, [
+        verified.grpven,
+      ]);
 
       // busco as compras feitas durante o ano
-      const ComprasAoAno = await Database.raw(queryComprasAno, [moment().year(), verified.user_code]);
+      const ComprasAoAno = await Database.raw(queryComprasAno, [
+        moment().year(),
+        verified.user_code,
+      ]);
 
       // verifico se o cara já tentou fazer algum scam com a empresa
-      const Info = await Database.select('Confiavel', 'VlrMinCompra', 'UF').from('dbo.FilialEntidadeGrVenda').where({
-        A1_GRPVEN: verified.grpven
-      })
+      const Info = await Database.select("Confiavel", "VlrMinCompra", "UF")
+        .from("dbo.FilialEntidadeGrVenda")
+        .where({
+          A1_GRPVEN: verified.grpven,
+        });
 
       // crio um obj bonitinho combinando alguns dados
       const Geral = {
@@ -104,16 +110,19 @@ class CompraController {
         LimiteAtual: InfoCompras[0].LimiteAtual - PedidosNaoFaturados[0].Total,
       };
 
-      let nCompensa = []
+      let nCompensa = [];
 
       // se a reputacao do cara nao for legal, pego uma lista do que ele tem em aberto e nao vai poder compensar
       if (!Info[0].Confiavel) {
-        nCompensa = await Database
-          .select('E1Prefixo as E1_PREFIXO', 'E1Num as E1_NUM', 'E1Parcela as E1_PARCELA')
-          .from('dbo.SE1_exc')
+        nCompensa = await Database.select(
+          "E1Prefixo as E1_PREFIXO",
+          "E1Num as E1_NUM",
+          "E1Parcela as E1_PARCELA"
+        )
+          .from("dbo.SE1_exc")
           .where({
-            GrpVen: verified.grpven
-          })
+            GrpVen: verified.grpven,
+          });
       }
 
       response.status(200).send({
@@ -124,7 +133,7 @@ class CompraController {
         Confiavel: Info[0].Confiavel,
         NaoCompensavel: nCompensa,
         VlrMinCompra: Info[0].VlrMinCompra,
-        Retira: Info[0].UF === 'SP' ? true : false
+        Retira: Info[0].UF === "SP" ? true : false,
       });
     } catch (err) {
       response.status(400).send();
@@ -133,8 +142,8 @@ class CompraController {
         params: null,
         payload: request.body,
         err: err.message,
-        handler: 'CompraController.Contas',
-      })
+        handler: "CompraController.Contas",
+      });
     }
   }
 
@@ -160,8 +169,8 @@ class CompraController {
         params: null,
         payload: request.body,
         err: err.message,
-        handler: 'CompraController.Pedidos',
-      })
+        handler: "CompraController.Pedidos",
+      });
     }
   }
 
@@ -286,22 +295,28 @@ class CompraController {
         params: params,
         payload: request.body,
         err: err.message,
-        handler: 'CompraController.PedidoDet',
-      })
+        handler: "CompraController.PedidoDet",
+      });
     }
   }
 
   async Comprar({ request, response }) {
     const token = request.header("authorization");
-    let { Items, Obs, Retira, AVista, Desconto } = request.only(["Items", "Obs", "Retira", 'AVista', 'Desconto']);
+    let { Items, Obs, Retira, AVista, Desconto } = request.only([
+      "Items",
+      "Obs",
+      "Retira",
+      "AVista",
+      "Desconto",
+    ]);
 
     try {
       const verified = seeToken(token);
 
       //verifico se o pedido tem pelo menos 1 item
       if (Items.length === 0) {
-        response.status(400).send('Nenhum item registrado para compra')
-        return
+        response.status(400).send("Nenhum item registrado para compra");
+        return;
       }
 
       //testar se o cara tem limite
@@ -318,8 +333,13 @@ class CompraController {
 
       Items.map(
         (item) =>
-        (TotalDoPedido +=
-          Number(item.QCompra) * (Number(item.QtMin) * (Number(item.VlrUn) * ((AVista ? 0.95 : 1) + (Desconto && item.ProdRoy === 1 ? Desconto : 1) - 1))))
+          (TotalDoPedido +=
+            Number(item.QCompra) *
+            (Number(item.QtMin) *
+              (Number(item.VlrUn) *
+                ((AVista ? 0.95 : 1) +
+                  (Desconto && item.ProdRoy === 1 ? Desconto : 1) -
+                  1))))
       );
 
       // testo o limite do cara - a faturar - total do pedido
@@ -327,16 +347,16 @@ class CompraController {
         limite[0].LimiteAtual - PedidosNaoFaturados[0].Total - TotalDoPedido <
         0
       ) {
-        response.status(400).send('Limite insuficiente')
-        return
+        response.status(400).send("Limite insuficiente");
+        return;
       }
 
       //testo se o cara ta bloqueado
       const bloqueado = await Database.raw(queryBloqueado, [verified.grpven]);
 
       if (bloqueado.length === 0 || bloqueado[0].Bloqueado === "S") {
-        response.status(400).send('Franqueado bloqueado')
-        return
+        response.status(400).send("Franqueado bloqueado");
+        return;
       }
 
       //busco dados do franqueado
@@ -368,7 +388,7 @@ class CompraController {
       //       Vlr: it.Vlr,
       //       FatConversao: it.FatConversao,
       //       ProdRoy: it.ProdRoy,
-      //       QCompra: it.QCompra * kit1.QCompra, 
+      //       QCompra: it.QCompra * kit1.QCompra,
       //     })
       //   })
 
@@ -389,7 +409,7 @@ class CompraController {
       //       Vlr: it.Vlr,
       //       FatConversao: it.FatConversao,
       //       ProdRoy: it.ProdRoy,
-      //       QCompra: it.QCompra * kit2.QCompra, 
+      //       QCompra: it.QCompra * kit2.QCompra,
       //     })
       //   })
 
@@ -402,7 +422,7 @@ class CompraController {
         PedidoId: ProxId,
         STATUS: null,
         Filial: "0201",
-        CpgId: AVista ? '55' : Franqueado[0].CondPag,
+        CpgId: AVista ? "55" : Franqueado[0].CondPag,
         DataCriacao: new Date(moment().subtract(3, "hours").format()),
       }).into("dbo.PedidosCompraCab");
 
@@ -420,15 +440,24 @@ class CompraController {
             Filial: "0201",
             CodigoTabelaPreco: "462",
             CodigoVendedor: "000026",
-            CodigoCondicaoPagto: AVista ? '55' : Franqueado[0].CondPag,
+            CodigoCondicaoPagto: AVista ? "55" : Franqueado[0].CondPag,
             TipoFrete: "C",
             MsgNotaFiscal: null,
             MsgPadrao: null,
             DataEntrega: null,
             CodigoProduto: `00000${item.Cód}`.slice(-5),
             QtdeVendida: item.QCompra * item.QtMin,
-            PrecoUnitarioLiquido: item.VlrUn * ((AVista ? 0.95 : 1) + (Desconto && item.ProdRoy === 1 ? Desconto : 1) - 1),
-            PrecoTotal: item.QCompra * (item.QtMin * item.VlrUn) * ((AVista ? 0.95 : 1) + (Desconto && item.ProdRoy === 1 ? Desconto : 1) - 1),
+            PrecoUnitarioLiquido:
+              item.VlrUn *
+              ((AVista ? 0.95 : 1) +
+                (Desconto && item.ProdRoy === 1 ? Desconto : 1) -
+                1),
+            PrecoTotal:
+              item.QCompra *
+              (item.QtMin * item.VlrUn) *
+              ((AVista ? 0.95 : 1) +
+                (Desconto && item.ProdRoy === 1 ? Desconto : 1) -
+                1),
             Limite: null,
             CodigoTotvs: null,
             DataCriacao: new Date(moment().subtract(3, "hours").format()),
@@ -449,8 +478,8 @@ class CompraController {
         params: null,
         payload: request.body,
         err: err.message,
-        handler: 'CompraController.Comprar',
-      })
+        handler: "CompraController.Comprar",
+      });
     }
   }
 
@@ -503,8 +532,8 @@ class CompraController {
         params: params,
         payload: request.body,
         err: err.message,
-        handler: 'CompraController.Cancelar',
-      })
+        handler: "CompraController.Cancelar",
+      });
     }
   }
 
@@ -516,9 +545,13 @@ class CompraController {
     try {
       seeToken(token);
 
-      const path = `\\\\192.168.1.248\\totvs12\\Producao\\protheus_data\\DANFE_FRANQUIA\\0201\\boleto_${PedidoId}${Parcela === 'UNICA' ? '' : `_${Parcela}`}.pdf`
+      const path = `\\\\192.168.1.248\\totvs12\\Producao\\protheus_data\\DANFE_FRANQUIA\\0201\\boleto_${PedidoId}${
+        Parcela === "UNICA" ? "" : `_${Parcela}`
+      }.pdf`;
 
-      const Imagem = await Drive.exists(path) ? await Drive.get(path) : { message: 'File not found' };
+      const Imagem = (await Drive.exists(path))
+        ? await Drive.get(path)
+        : { message: "File not found" };
 
       response.status(200).send(Imagem);
     } catch (err) {
@@ -528,8 +561,8 @@ class CompraController {
         params: params,
         payload: request.body,
         err: err.message,
-        handler: 'CompraController.RetriveBoleto',
-      })
+        handler: "CompraController.RetriveBoleto",
+      });
     }
   }
 
@@ -540,9 +573,11 @@ class CompraController {
     try {
       seeToken(token);
 
-      const path = `\\\\192.168.1.248\\totvs12\\Producao\\protheus_data\\DANFE_FRANQUIA\\0201\\nf\\nf_${PedidoId}.pdf`
+      const path = `\\\\192.168.1.248\\totvs12\\Producao\\protheus_data\\DANFE_FRANQUIA\\0201\\nf\\nf_${PedidoId}.pdf`;
 
-      const Imagem = await Drive.exists(path) ? await Drive.get(path) : { message: 'File not found' };
+      const Imagem = (await Drive.exists(path))
+        ? await Drive.get(path)
+        : { message: "File not found" };
 
       response.status(200).send(Imagem);
     } catch (err) {
@@ -552,33 +587,36 @@ class CompraController {
         params: params,
         payload: request.body,
         err: err.message,
-        handler: 'CompraController.RetriveNota',
-      })
+        handler: "CompraController.RetriveNota",
+      });
     }
   }
 
   async Compensar({ request, response }) {
-    const folderName = request.input('folderName')
-    const multiples = request.input('multiple')
-    const nf = request.input('nf')
-    const serie = request.input('serie')
-    const parcela = request.input('parcela')
-    const valor = request.input('valor')
+    const folderName = request.input("folderName");
+    const multiples = request.input("multiple");
+    const nf = request.input("nf");
+    const serie = request.input("serie");
+    const parcela = request.input("parcela");
+    const valor = request.input("valor");
     const token = request.header("authorization");
     const formData = request.file("formData", {
       types: ["image", "pdf"],
       size: "10mb",
     });
     const verified = seeToken(token);
-    let path = Helpers.publicPath(`/COMPROVANTES/${verified.user_code}/${folderName}`);
-    let newFileName = ''
-    let filenames = []
-    let file = null
+    let path = Helpers.publicPath(
+      `/COMPROVANTES/${verified.user_code}/${folderName}`
+    );
+    let newFileName = "";
+    let filenames = [];
+    let file = null;
 
     try {
-      if (multiples === 'N') {
-
-        newFileName = `comprovante-1-${new Date().getTime()}.${formData.subtype}`;
+      if (multiples === "N") {
+        newFileName = `comprovante-1-${new Date().getTime()}.${
+          formData.subtype
+        }`;
 
         await formData.move(path, {
           name: newFileName,
@@ -596,7 +634,9 @@ class CompraController {
         );
       } else {
         await formData.moveAll(path, (file, i) => {
-          newFileName = `comprovante-${i + 1}-${new Date().getTime()}.${file.subtype}`;
+          newFileName = `comprovante-${i + 1}-${new Date().getTime()}.${
+            file.subtype
+          }`;
           filenames.push(newFileName);
 
           return {
@@ -618,14 +658,11 @@ class CompraController {
         });
       }
 
-      const exists = await Database
-        .select("*")
-        .from('dbo.SE1_exc')
-        .where({
-          E1Prefixo: serie,
-          E1Num: nf,
-          E1Parcela: parcela
-        })
+      const exists = await Database.select("*").from("dbo.SE1_exc").where({
+        E1Prefixo: serie,
+        E1Num: nf,
+        E1Parcela: parcela,
+      });
 
       if (exists.length === 0) {
         await Database.insert({
@@ -633,18 +670,21 @@ class CompraController {
           E1Num: nf,
           E1Parcela: parcela,
           DtInserido: moment().subtract(3, "hours").toDate(),
-          Origem: 'SLWEB',
+          Origem: "SLWEB",
           EmailFinanceiro: false,
-          GrpVen: verified.grpven
-        }).into('dbo.SE1_exc')
+          GrpVen: verified.grpven,
+        }).into("dbo.SE1_exc");
       }
 
-      const franqueado = await Database
-        .select('A1_COD', 'A1_LOJA', 'GrupoVenda')
-        .from('dbo.FilialEntidadeGrVenda')
+      const franqueado = await Database.select(
+        "A1_COD",
+        "A1_LOJA",
+        "GrupoVenda"
+      )
+        .from("dbo.FilialEntidadeGrVenda")
         .where({
           A1_GRPVEN: verified.grpven,
-        })
+        });
 
       await Mail.send(
         "emails.CompensacaoDeDuplicata",
@@ -654,17 +694,23 @@ class CompraController {
           LOJA: franqueado[0].A1_LOJA,
           DUPLICATA: nf,
           SERIE: serie,
-          PARCELA: String(parcela).trim() === '' ? 1 : String(parcela).trim(),
+          PARCELA: String(parcela).trim() === "" ? 1 : String(parcela).trim(),
           Frontend: Env.get("CLIENT_URL"),
-          VALOR: valor
+          VALOR: valor,
         },
         (message) => {
           message
             .to([Env.get("EMAIL_FINANCEIRO_1"), Env.get("EMAIL_FINANCEIRO_2")])
             .cc([Env.get("EMAIL_COMERCIAL_1"), Env.get("EMAIL_SUPORTE")])
             .from(Env.get("MAIL_USERNAME"), "SLWEB")
-            .subject(`Baixa de título do(a) franqueado(a) ${String(franqueado[0].GrupoVenda).split(' ')[0]} - ${franqueado[0].A1_COD}/${franqueado[0].A1_LOJA} - R$ ${valor}`)
-            .attach(`${path}/${newFileName}`)
+            .subject(
+              `Baixa de título do(a) franqueado(a) ${
+                String(franqueado[0].GrupoVenda).split(" ")[0]
+              } - ${franqueado[0].A1_COD}/${
+                franqueado[0].A1_LOJA
+              } - R$ ${valor}`
+            )
+            .attach(`${path}/${newFileName}`);
         }
       );
 
@@ -686,8 +732,8 @@ class CompraController {
         params: null,
         payload: request.body,
         err: err.message,
-        handler: 'CompraController.Compensar',
-      })
+        handler: "CompraController.Compensar",
+      });
     }
   }
 
@@ -701,21 +747,36 @@ class CompraController {
     try {
       const verified = seeToken(token);
 
-      let compraCab = []
-      let compraDet = []
+      let compraCab = [];
+      let compraDet = [];
 
-      if (status === 'Processando') {
-        compraCab = await Database.raw("select C.Nome_Fantasia, PC.PedidoId as PvcID, C.CNPJss, PC.DataCriacao, C.TPessoa from dbo.PedidosCompraCab as PC inner join dbo.Cliente as C on PC.GrpVen = C.GrpVen and C.A1_SATIV1 = '000113' and A1Tipo = 'R' where PC.PedidoId = ? and PC.GrpVen = ?", [pedidoid, verified.grpven]);
+      if (status === "Processando") {
+        compraCab = await Database.raw(
+          "select C.Nome_Fantasia, PC.PedidoId as PvcID, C.CNPJss, PC.DataCriacao, C.TPessoa from dbo.PedidosCompraCab as PC inner join dbo.Cliente as C on PC.GrpVen = C.GrpVen and C.A1_SATIV1 = '000113' and A1Tipo = 'R' where PC.PedidoId = ? and PC.GrpVen = ?",
+          [pedidoid, verified.grpven]
+        );
 
-        compraDet = await Database.raw("select PV.CodigoProduto as ProdId, P.Produto, PV.QtdeVendida as PvdQtd, PV.PrecoUnitarioLiquido as PvdVlrUnit, P.PrCompra,PV.PrecoTotal as PvdVlrTotal from dbo.PedidosVenda as PV inner join dbo.Produtos as P on PV.CodigoProduto = P.ProdId where PV.PedidoID = ? and PV.GrpVen = ? order by PV.PedidoItemID ASC", [pedidoid, verified.grpven])
-      } else if (status === 'Faturado') {
-        compraCab = await Database.raw("select C.Nome_Fantasia, PC.PedidoId as PvcID, C.CNPJss, PC.DataCriacao, C.TPessoa from dbo.PedidosCompraCab as PC inner join dbo.Cliente as C on PC.GrpVen = C.GrpVen and C.A1_SATIV1 = '000113' and A1Tipo = 'R' where PC.C5NUM = ? and PC.GrpVen = ?", [pedidoid, verified.grpven])
+        compraDet = await Database.raw(
+          "select PV.CodigoProduto as ProdId, P.Produto, PV.QtdeVendida as PvdQtd, PV.PrecoUnitarioLiquido as PvdVlrUnit, P.PrCompra,PV.PrecoTotal as PvdVlrTotal from dbo.PedidosVenda as PV inner join dbo.Produtos as P on PV.CodigoProduto = P.ProdId where PV.PedidoID = ? and PV.GrpVen = ? order by PV.PedidoItemID ASC",
+          [pedidoid, verified.grpven]
+        );
+      } else if (status === "Faturado") {
+        compraCab = await Database.raw(
+          "select C.Nome_Fantasia, PC.PedidoId as PvcID, C.CNPJss, PC.DataCriacao, C.TPessoa from dbo.PedidosCompraCab as PC inner join dbo.Cliente as C on PC.GrpVen = C.GrpVen and C.A1_SATIV1 = '000113' and A1Tipo = 'R' where PC.C5NUM = ? and PC.GrpVen = ?",
+          [pedidoid, verified.grpven]
+        );
 
         if (!compraCab[0]) {
-          compraCab = await Database.raw("SELECT distinct C.Nome_Fantasia, S.Pedido as PvcID, C.CNPJss, S.DtEmissao as DataCriacao, C.TPessoa FROM dbo.SDBase as S inner join dbo.Cliente as C on S.SA1_GRPVEN = C.GrpVen and C.A1_SATIV1 = '000113' and C.A1Tipo = 'R' WHERE S.Pedido = ? and S.GRPVEN = ? order by S.Pedido ASC", [pedidoid, verified.grpven])
+          compraCab = await Database.raw(
+            "SELECT distinct C.Nome_Fantasia, S.Pedido as PvcID, C.CNPJss, S.DtEmissao as DataCriacao, C.TPessoa FROM dbo.SDBase as S inner join dbo.Cliente as C on S.SA1_GRPVEN = C.GrpVen and C.A1_SATIV1 = '000113' and C.A1Tipo = 'R' WHERE S.Pedido = ? and S.GRPVEN = ? order by S.Pedido ASC",
+            [pedidoid, verified.grpven]
+          );
         }
 
-        compraDet = await Database.raw("select S.D_COD as ProdId, P.Produto, S.D_QUANT as PvdQtd, S.D_PRCVEN PvdVlrUnit, P.PrCompra, S.D_TOTAL as PvdVlrTotal from dbo.SDBase as S inner join dbo.Produtos as P on S.ProdId = P.ProdId where Pedido = ? and GRPVEN = ?", [pedidoid, verified.grpven])
+        compraDet = await Database.raw(
+          "select S.D_COD as ProdId, P.Produto, S.D_QUANT as PvdQtd, S.D_PRCVEN PvdVlrUnit, P.PrCompra, S.D_TOTAL as PvdVlrTotal from dbo.SDBase as S inner join dbo.Produtos as P on S.ProdId = P.ProdId where Pedido = ? and GRPVEN = ?",
+          [pedidoid, verified.grpven]
+        );
       }
 
       const PDFModel = PDFGen(compraCab[0], compraDet);
@@ -724,45 +785,47 @@ class CompraController {
       pdfDoc.pipe(fs.createWriteStream(PathWithName));
       pdfDoc.end();
 
-      const enviarDaMemóriaSemEsperarSalvarNoFS = await toArray(pdfDoc).then(parts => {
-        return Buffer.concat(parts);
-      })
+      const enviarDaMemóriaSemEsperarSalvarNoFS = await toArray(pdfDoc).then(
+        (parts) => {
+          return Buffer.concat(parts);
+        }
+      );
 
-      response.status(200).send(enviarDaMemóriaSemEsperarSalvarNoFS)
+      response.status(200).send(enviarDaMemóriaSemEsperarSalvarNoFS);
     } catch (err) {
-      response.status(400).send()
+      response.status(400).send();
       logger.error({
         token: token,
         params: params,
         payload: request.body,
         err: err.message,
-        handler: 'CompraController.GenPDFCompra',
-      })
+        handler: "CompraController.GenPDFCompra",
+      });
     }
   }
 
   async ConsultaRota({ request, response, params }) {
     const token = request.header("authorization");
-    let CEPManual = params.CEP
-    let CEPDefault = null
-    let CEPTarget = null
+    let CEPManual = params.CEP;
+    let CEPDefault = null;
+    let CEPTarget = null;
 
     try {
       const verified = seeToken(token);
 
-      if (CEPManual === 'WYSI') {
+      if (CEPManual === "WYSI") {
         CEPDefault = await Database.raw(
           "select C.CEP, F.UF, C.Município from dbo.FilialEntidadeGrVenda as F left join dbo.Cliente as C on F.A1_COD = C.A1_COD and F.A1_GRPVEN = C.GrpVen and C.TPessoa = 'J' where F.M0_CODFIL = ?",
           [verified.user_code]
-        )
+        );
 
-        if (String(CEPDefault[0].UF).trim() !== 'SP') {
-          CEPTarget = null
+        if (String(CEPDefault[0].UF).trim() !== "SP") {
+          CEPTarget = null;
         } else {
-          CEPTarget = CEPDefault[0].CEP
+          CEPTarget = CEPDefault[0].CEP;
         }
       } else {
-        CEPTarget = CEPManual
+        CEPTarget = CEPManual;
       }
 
       if (CEPTarget === null) {
@@ -770,22 +833,32 @@ class CompraController {
           Faturamento: {
             CEP: CEPDefault[0].CEP,
             Regiao: CEPDefault[0].Município,
-            Faturamento: 'Sem previsão',
-            Rota: 'Sem rota',
-            PrevFaturamento: '',
-            PrevRota: ''
-          }
+            Faturamento: "Sem previsão",
+            Rota: "Sem rota",
+            PrevFaturamento: "",
+            PrevRota: "",
+          },
         });
-        return
+        return;
       }
 
-      const rotas = await Database.select('*').from('dbo.SLWEB_Rotas')
+      const rotas = await Database.select("*").from("dbo.SLWEB_Rotas");
 
-      const matchIndexes = matchCEPWithRanges(CEPTarget, rotas.map(rota => rota.range_CEP))
+      const matchIndexes = matchCEPWithRanges(
+        CEPTarget,
+        rotas.map((rota) => rota.range_CEP)
+      );
 
       if (matchIndexes.length === 0) {
-        console.log('nenhum match para o CEP:' + CEPTarget)
+        console.log("nenhum match para o CEP:" + CEPTarget);
         //fazer alguma coisa caso a gente não encontre nenhuma rota automaticamente
+      }
+
+      if (typeof rotas[matchIndexes[0]] === "undefined") {
+        response.status(400).send({
+          message: "rota não encontrada",
+        });
+        return;
       }
 
       response.status(200).send({
@@ -794,11 +867,15 @@ class CompraController {
           Regiao: rotas[matchIndexes[0]].desc_CEP,
           Faturamento: rotas[matchIndexes[0]].faturamento,
           Rota: rotas[matchIndexes[0]].rota,
-          PrevFaturamento: returnNextAvailableDate(rotas[matchIndexes[0]].faturamento).format('LL'),
-          PrevRota: returnNextAvailableDate(rotas[matchIndexes[0]].rota, returnNextAvailableDate(rotas[matchIndexes[0]].faturamento)).format('LL')
-        }
+          PrevFaturamento: returnNextAvailableDate(
+            rotas[matchIndexes[0]].faturamento
+          ).format("LL"),
+          PrevRota: returnNextAvailableDate(
+            rotas[matchIndexes[0]].rota,
+            returnNextAvailableDate(rotas[matchIndexes[0]].faturamento)
+          ).format("LL"),
+        },
       });
-
     } catch (err) {
       response.status(400).send();
       logger.error({
@@ -806,8 +883,8 @@ class CompraController {
         params: params,
         payload: request.body,
         err: err.message,
-        handler: 'CompraController.ConsultaRota',
-      })
+        handler: "CompraController.ConsultaRota",
+      });
     }
   }
 }
@@ -891,118 +968,134 @@ module.exports = CompraController;
 // ]
 
 const matchCEPWithRanges = (targetCEP, CEPRanges) => {
-  const matchIndex = []
+  const matchIndex = [];
 
   CEPRanges.forEach((range, index) => {
-    let result = testCEPMatch(targetCEP, range)
+    let result = testCEPMatch(targetCEP, range);
 
     if (result === true) {
-      matchIndex.push(index)
+      matchIndex.push(index);
     }
+  });
 
-  })
-
-  return matchIndex
-}
+  return matchIndex;
+};
 
 const testCEPMatch = (targetCEP, CEPRange) => {
   //tem "a"
-  let isRange = String(CEPRange).includes('a') || String(CEPRange).includes('A')
+  let isRange =
+    String(CEPRange).includes("a") || String(CEPRange).includes("A");
 
   //tem "/"
-  let isMultipleExact = String(CEPRange).includes('/')
+  let isMultipleExact = String(CEPRange).includes("/");
 
   //cep exato
-  let isSingleExact = !String(CEPRange).includes('/') && !String(CEPRange).includes('a') && !String(CEPRange).includes('A') && String(CEPRange).trim() !== '' && CEPRange !== null && typeof CEPRange !== 'undefined'
+  let isSingleExact =
+    !String(CEPRange).includes("/") &&
+    !String(CEPRange).includes("a") &&
+    !String(CEPRange).includes("A") &&
+    String(CEPRange).trim() !== "" &&
+    CEPRange !== null &&
+    typeof CEPRange !== "undefined";
 
   //tem "a" e "/"
-  let isRangeAndExact = String(CEPRange).includes('/') && (String(CEPRange).includes('a') || String(CEPRange).includes('A'))
+  let isRangeAndExact =
+    String(CEPRange).includes("/") &&
+    (String(CEPRange).includes("a") || String(CEPRange).includes("A"));
 
-  let aux = null
-  let deuMatch = false
+  let aux = null;
+  let deuMatch = false;
 
   if (isRangeAndExact) {
-    let secondaryRange = []
+    let secondaryRange = [];
 
-    aux = String(CEPRange).split('/')
+    aux = String(CEPRange).split("/");
 
     aux.forEach((item, index) => {
-      if (String(item).includes('a') || String(item).includes('A')) {
-        secondaryRange.push(item)
-        aux.splice(index, 1)
+      if (String(item).includes("a") || String(item).includes("A")) {
+        secondaryRange.push(item);
+        aux.splice(index, 1);
       }
-    })
+    });
 
     aux.forEach((item) => {
       if (String(targetCEP).includes(String(item))) {
-        deuMatch = true
+        deuMatch = true;
       }
-    })
+    });
 
-    if (Number(formatCEP(secondaryRange[0].split(/[a]/i)[0].trim())) <= Number(formatCEP(targetCEP)) && Number(formatCEP(secondaryRange[0].split(/[a]/i)[1].trim())) >= Number(formatCEP(targetCEP))) {
-      deuMatch = true
+    if (
+      Number(formatCEP(secondaryRange[0].split(/[a]/i)[0].trim())) <=
+        Number(formatCEP(targetCEP)) &&
+      Number(formatCEP(secondaryRange[0].split(/[a]/i)[1].trim())) >=
+        Number(formatCEP(targetCEP))
+    ) {
+      deuMatch = true;
     }
 
-    return deuMatch
+    return deuMatch;
   } else if (isMultipleExact || isSingleExact) {
-    aux = String(CEPRange).split('/')
+    aux = String(CEPRange).split("/");
 
     aux.forEach((item) => {
       if (String(targetCEP).includes(item)) {
-        deuMatch = true
+        deuMatch = true;
       }
-    })
+    });
 
-    return deuMatch
+    return deuMatch;
   } else if (isRange) {
-    aux = String(CEPRange).split(/[a]/i)
+    aux = String(CEPRange).split(/[a]/i);
 
-    if (Number(formatCEP(aux[0].trim())) <= Number(formatCEP(targetCEP)) && Number(formatCEP(aux[1].trim())) >= Number(formatCEP(targetCEP))) {
-      deuMatch = true
+    if (
+      Number(formatCEP(aux[0].trim())) <= Number(formatCEP(targetCEP)) &&
+      Number(formatCEP(aux[1].trim())) >= Number(formatCEP(targetCEP))
+    ) {
+      deuMatch = true;
     }
 
-    return deuMatch
+    return deuMatch;
   } else {
-    return deuMatch
+    return deuMatch;
   }
-}
+};
 
 const formatCEP = (CEP) => {
-  let newCEP = String(CEP)
+  let newCEP = String(CEP);
 
   if (newCEP.length < 5) {
-    newCEP = newCEP.padStart(5, '0')
+    newCEP = newCEP.padStart(5, "0");
   }
 
   if (newCEP.length < 8) {
-    newCEP = newCEP.padEnd(8, '0')
+    newCEP = newCEP.padEnd(8, "0");
   }
 
-  return newCEP
-}
+  return newCEP;
+};
 
 const convertWeekDayToInteger = (weekday) => {
   switch (weekday) {
-    case 'SEGUNDA':
-      return 1
-    case 'TERÇA':
-      return 2
-    case 'QUARTA':
-      return 3
-    case 'QUINTA':
-      return 4
-    case 'SEXTA':
-      return 5
+    case "SEGUNDA":
+      return 1;
+    case "TERÇA":
+      return 2;
+    case "QUARTA":
+      return 3;
+    case "QUINTA":
+      return 4;
+    case "SEXTA":
+      return 5;
   }
-}
+};
 
 const returnNextAvailableDate = (rawWeekday, countSince = null) => {
-  let today
+  let today;
 
   if (countSince === null) {
     today = moment().isoWeekday();
   } else {
-    today = countSince.isoWeekday()
+    today = countSince.isoWeekday();
   }
 
   if (today < convertWeekDayToInteger(rawWeekday) && countSince !== null) {
@@ -1010,25 +1103,31 @@ const returnNextAvailableDate = (rawWeekday, countSince = null) => {
   } else if (today < convertWeekDayToInteger(rawWeekday)) {
     return moment().isoWeekday(convertWeekDayToInteger(rawWeekday));
   } else if (countSince !== null) {
-    return countSince.add(1, 'weeks').isoWeekday(convertWeekDayToInteger(rawWeekday));
+    return countSince
+      .add(1, "weeks")
+      .isoWeekday(convertWeekDayToInteger(rawWeekday));
   } else {
-    return moment().add(1, 'weeks').isoWeekday(convertWeekDayToInteger(rawWeekday));
+    return moment()
+      .add(1, "weeks")
+      .isoWeekday(convertWeekDayToInteger(rawWeekday));
   }
-}
+};
+
 
 const queryProdutos =
   "SELECT dbo.Produtos.ProdId AS Cód, dbo.Produtos.Produto, dbo.Produtos.ProdQtMinCompra AS QtMin, dbo.Produtos.PrCompra AS VlrUn, [ProdQtMinCompra] * [PrCompra] AS Vlr, dbo.Produtos.FatConversao, dbo.Produtos.ProdRoy FROM dbo.Produtos WHERE dbo.Produtos.Compra = 'S' ORDER BY dbo.Produtos.Produto";
 
 const queryGigante1 =
-  "SELECT dbo.FilialEntidadeGrVenda.LimiteCredito, IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, IIF( dbo.FilialEntidadeGrVenda.LimExtraCredito is null, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) ) as LimExtraCredito, dbo.FilialEntidadeGrVenda.Retira, dbo.FilialEntidadeGrVenda.VlrMinCompra, SE1_GrpVenT.Avencer, SE1_GrpVenT.Vencida, SE1_ComprasNVencidas.Compras, IIf( [Compras] > 0, [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) - [Compras], [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, IIF( dbo.FilialEntidadeGrVenda.LimExtraCredito is null, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) ) ) AS LimiteAtual FROM ( ( dbo.FilialEntidadeGrVenda LEFT JOIN ( SELECT SE1_GrpVen.GrpVen, Sum(IIf([SE1DtVencR] > GETDATE(), 0, [E1_SALDO])) AS Avencer, Sum(IIf([SE1DtVencR] < GETDATE(), [E1_SALDO], 0)) AS Vencida FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) AND (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc GROUP BY SE1_GrpVen.GrpVen ) as SE1_GrpVenT ON dbo.FilialEntidadeGrVenda.A1_GRPVEN = SE1_GrpVenT.GrpVen ) LEFT JOIN ( SELECT SE1_GrpVen.GrpVen, Sum(SE1_GrpVen.E1_SALDO) AS Compras FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) AND (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc WHERE (((SE1_Class.E1Desc = 'Compra' ))) GROUP BY SE1_GrpVen.GrpVen ) as SE1_ComprasNVencidas ON dbo.FilialEntidadeGrVenda.A1_GRPVEN = SE1_ComprasNVencidas.GrpVen ) WHERE (dbo.FilialEntidadeGrVenda.A1_GRPVEN = ?)";
+  "SELECT dbo.FilialEntidadeGrVenda.LimiteCredito, IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, IIF( dbo.FilialEntidadeGrVenda.LimExtraCredito is null, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) ) as LimExtraCredito, dbo.FilialEntidadeGrVenda.Retira, dbo.FilialEntidadeGrVenda.VlrMinCompra, SE1_GrpVenT.Avencer, SE1_GrpVenT.Vencida, SE1_ComprasNVencidas.Compras, IIf( [Compras] > 0, [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) - [Compras], [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, IIF( dbo.FilialEntidadeGrVenda.LimExtraCredito is null, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) ) ) AS LimiteAtual FROM ( ( dbo.FilialEntidadeGrVenda LEFT JOIN ( SELECT SE1_GrpVen.GrpVen, Sum(IIf([SE1DtVencR] > GETDATE(), 0, [E1_SALDO])) AS Avencer, Sum(IIf([SE1DtVencR] < GETDATE(), [E1_SALDO], 0)) AS Vencida FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) AND (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc GROUP BY SE1_GrpVen.GrpVen ) as SE1_GrpVenT ON dbo.FilialEntidadeGrVenda.A1_GRPVEN = SE1_GrpVenT.GrpVen ) LEFT JOIN ( SELECT SE1_GrpVen.GrpVen, Sum(SE1_GrpVen.E1_SALDO) AS Compras FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) AND (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc WHERE (((SE1_Class.E1Desc = 'Compra' ) or (SE1_Class.E1Desc = 'Acordo' ))) GROUP BY SE1_GrpVen.GrpVen ) as SE1_ComprasNVencidas ON dbo.FilialEntidadeGrVenda.A1_GRPVEN = SE1_ComprasNVencidas.GrpVen ) WHERE (dbo.FilialEntidadeGrVenda.A1_GRPVEN = ?)";
 
 const queryBloqueado =
-  "SELECT IIF(SUM(SE1_GrpVen.E1_SALDO) > 0, 'S', 'N') as Bloqueado FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) AND (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc where SE1_GrpVen.GrpVen = ? and CAST(DtVenc as date) < CAST(GETDATE() as date) and (SE1_Class.E1Desc = 'Compra' or SE1_Class.E1Desc = 'Royalties')";
+  "SELECT IIF(SUM(SE1_GrpVen.E1_SALDO) > 0, 'S', 'N') as Bloqueado FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) AND (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc where SE1_GrpVen.GrpVen = ? and CAST(DtVenc as date) < CAST(GETDATE() as date) and (SE1_Class.E1Desc = 'Compra' or SE1_Class.E1Desc = 'Royalties' or SE1_Class.E1Desc = 'Acordo' or SE1_Class.E1Desc = '2BTech')";
 
 const queryDuplicatas =
   "SELECT * FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) AND (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc WHERE SE1_GrpVen.GrpVen = ?";
 
-const queryComprasAno = "SELECT * FROM ( SELECT dbo.FilialEntidadeGrVenda.M0_CODFIL, dbo.FilialEntidadeGrVenda.GrupoVenda, MONTH([DtEmissao]) AS mes, Year([DtEmissao]) AS ano, IIf([F2_VALFAT] = 0, 'Bonificação', 'Compra') AS Tipo, dbo.SDBase.D_TOTAL FROM ( dbo.SDBase INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.SDBase.GRPVEN = dbo.FilialEntidadeGrVenda.A1_GRPVEN ) INNER JOIN dbo.Produtos ON dbo.SDBase.ProdId = dbo.Produtos.ProdId WHERE ( ((dbo.SDBase.F_SERIE) = '1') AND ((dbo.SDBase.D_FILIAL) = '0201') AND ((dbo.SDBase.M0_TIPO) = 'E') AND ((Year([DtEmissao])) = ?) AND ((dbo.Produtos.ProdRoy) = 1) ) GROUP BY dbo.FilialEntidadeGrVenda.M0_CODFIL, dbo.FilialEntidadeGrVenda.GrupoVenda, dbo.SDBase.GRPVEN, dbo.SDBase.D_TOTAL, Year([DtEmissao]), MONTH([DtEmissao]), IIf([F2_VALFAT] = 0, 'Bonificação', 'Compra') ) t PIVOT ( Sum(t.D_TOTAL) FOR t.mes IN( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12] ) ) p where M0_CODFIL = ? order by Tipo DESC";
+const queryComprasAno =
+  "SELECT * FROM ( SELECT dbo.FilialEntidadeGrVenda.M0_CODFIL, dbo.FilialEntidadeGrVenda.GrupoVenda, MONTH([DtEmissao]) AS mes, Year([DtEmissao]) AS ano, IIf([F2_VALFAT] = 0, 'Bonificação', 'Compra') AS Tipo, dbo.SDBase.D_TOTAL FROM ( dbo.SDBase INNER JOIN dbo.FilialEntidadeGrVenda ON dbo.SDBase.GRPVEN = dbo.FilialEntidadeGrVenda.A1_GRPVEN ) WHERE ( ((dbo.SDBase.F_SERIE) = '1') AND ((dbo.SDBase.D_FILIAL) = '0201') AND ((dbo.SDBase.M0_TIPO) = 'E') AND ((Year([DtEmissao])) = ?) ) ) t PIVOT ( Sum(t.D_TOTAL) FOR t.mes IN( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12] ) ) p where M0_CODFIL = ? order by Tipo DESC";
 
 const queryPedidosNaoAtendidos =
   "SELECT 'Processando' AS Status, dbo.PedidosCompraCab.DataCriacao AS Solicitacao, dbo.PedidosCompraCab.PedidoId as Pedido, '' as NF, '' as Serie, Sum(dbo.PedidosVenda.PrecoTotal) AS Total, Count(dbo.PedidosVenda.Item) AS QtItems FROM dbo.PedidosVenda  INNER JOIN dbo.PedidosCompraCab ON (dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial) AND (dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId)  WHERE (((dbo.PedidosCompraCab.NroNF) Is Null) AND ((dbo.PedidosCompraCab.GrpVen)=?) AND ((dbo.PedidosVenda.STATUS)<>'C' Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null))  GROUP BY dbo.PedidosCompraCab.STATUS, dbo.PedidosCompraCab.DataCriacao, dbo.PedidosCompraCab.PedidoId, dbo.PedidosVenda.CodigoTotvs  ORDER BY dbo.PedidosCompraCab.DataCriacao DESC";
@@ -1043,7 +1142,7 @@ const queryPedidosAtendidosDetPorDocNum =
   "SELECT GRPVEN, D_EMISSAO, F_SERIE, DOC, Pedido, D_ITEM, ProdId, Produto, D_UM, D_QUANT, D_PRCVEN, D_TOTAL, DtEmissao AS Emissao, DEPDEST FROM dbo.SDBase WHERE (((GRPVEN)=?) AND ((D_FILIAL)<>?) AND ((M0_TIPO)='E')) AND ((DOC) = ?) AND F_SERIE = '1' ORDER BY D_EMISSAO DESC";
 
 const queryLimiteDisponivel =
-  "SELECT IIf( [Compras] > 0, [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) - [Compras], [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, IIF( dbo.FilialEntidadeGrVenda.LimExtraCredito is null, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) ) ) AS LimiteAtual FROM dbo.FilialEntidadeGrVenda LEFT JOIN ( SELECT SE1_GrpVen.GrpVen, Sum(SE1_GrpVen.E1_SALDO) AS Compras FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) AND (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc WHERE (((SE1_Class.E1Desc = 'Compra' ))) GROUP BY SE1_GrpVen.GrpVen ) as SE1_ComprasNVencidas ON dbo.FilialEntidadeGrVenda.A1_GRPVEN = SE1_ComprasNVencidas.GrpVen WHERE ( ((dbo.FilialEntidadeGrVenda.Inatv) Is Null) and dbo.FilialEntidadeGrVenda.A1_GRPVEN = ? )";
+  "SELECT IIf( [Compras] > 0, [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) - [Compras], [LimiteCredito] + IIF( IIF( dbo.FilialEntidadeGrVenda.DtExtraCredito is null, DATEADD(HOUR, -24, GETDATE()), DATEDIFF( hour, dbo.FilialEntidadeGrVenda.DtExtraCredito, GETDATE() ) ) > 24, 0, IIF( dbo.FilialEntidadeGrVenda.LimExtraCredito is null, 0, dbo.FilialEntidadeGrVenda.LimExtraCredito ) ) ) AS LimiteAtual FROM dbo.FilialEntidadeGrVenda LEFT JOIN ( SELECT SE1_GrpVen.GrpVen, Sum(SE1_GrpVen.E1_SALDO) AS Compras FROM ( SE1_GrpVen INNER JOIN SE1_Class ON (SE1_GrpVen.E1_TIPO = SE1_Class.E1_TIPO) AND (SE1_GrpVen.E1_PREFIXO = SE1_Class.E1_PREFIXO) ) LEFT JOIN dbo.SE1DtVenc ON SE1_GrpVen.DtVenc = dbo.SE1DtVenc.SE1DtVenc WHERE (((SE1_Class.E1Desc = 'Compra' ) or (SE1_Class.E1Desc = 'Acordo' ))) GROUP BY SE1_GrpVen.GrpVen ) as SE1_ComprasNVencidas ON dbo.FilialEntidadeGrVenda.A1_GRPVEN = SE1_ComprasNVencidas.GrpVen WHERE ( ((dbo.FilialEntidadeGrVenda.Inatv) Is Null) and dbo.FilialEntidadeGrVenda.A1_GRPVEN = ? )";
 
 const queryPedidosAFaturar =
-  "SELECT IIF(Sum(dbo.PedidosVenda.PrecoTotal) is null, 0, Sum(dbo.PedidosVenda.PrecoTotal)) AS Total FROM dbo.PedidosVenda INNER JOIN dbo.PedidosCompraCab ON (     dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial ) AND (     dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId ) WHERE (     ((dbo.PedidosCompraCab.NroNF) Is Null)     AND ((dbo.PedidosCompraCab.GrpVen) = ?)     AND (    (dbo.PedidosVenda.STATUS) <> 'C'    Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null     ) )"
+  "SELECT IIF(Sum(dbo.PedidosVenda.PrecoTotal) is null, 0, Sum(dbo.PedidosVenda.PrecoTotal)) AS Total FROM dbo.PedidosVenda INNER JOIN dbo.PedidosCompraCab ON (     dbo.PedidosVenda.Filial = dbo.PedidosCompraCab.Filial ) AND (     dbo.PedidosVenda.PedidoID = dbo.PedidosCompraCab.PedidoId ) WHERE (     ((dbo.PedidosCompraCab.NroNF) Is Null)     AND ((dbo.PedidosCompraCab.GrpVen) = ?)     AND (    (dbo.PedidosVenda.STATUS) <> 'C'    Or (dbo.PedidosVenda.STATUS) Is Null and dbo.PedidosCompraCab.STATUS <> 'C' or dbo.PedidosCompraCab.STATUS is null     ) )";

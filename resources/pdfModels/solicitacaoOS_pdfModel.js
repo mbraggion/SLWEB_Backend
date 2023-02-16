@@ -44,16 +44,18 @@ exports.PDFGen = (Solicitacao, ID, Dados, verified, solicitacao) => {
     { text: "Acompanha Gabinete: ", bold: true },
     `${typeof Solicitacao.Gabinete == 'undefined' || Solicitacao.Gabinete === '' || Solicitacao.Gabinete === false || Solicitacao.Gabinete === '0' ? "Não" : "Sim"}`,
   ]);
+
   detalhes.push([
     { text: "Abastecimento: ", bold: true },
     `${Solicitacao.Abastecimento}`,
   ]);
+
   detalhes.push([
     { text: "Sistema de Pagamento: ", bold: true },
     `${Solicitacao.Pagamento}`,
   ]);
 
-  if ( Solicitacao.Pagamento === "Validador" || Solicitacao.Pagamento === "Cartão e Validador" ) {
+  if (Solicitacao.Pagamento === "Validador" || Solicitacao.Pagamento === "Cartão e Validador") {
     detalhes.push([
       { text: "Tipo de Validador: ", bold: true },
       `${Solicitacao.TipoValidador}`,
@@ -285,7 +287,17 @@ exports.PDFGen = (Solicitacao, ID, Dados, verified, solicitacao) => {
         },
       },
 
-      { text: "Configuração", style: "subheader" },
+      { text: "Detalhes", style: "subheader" },
+
+      {
+        style: "tableExample",
+        table: {
+          widths: ["auto", "*"],
+          body: detalhes,
+        },
+      },
+
+      { text: "Configuração", style: "subheader", pageBreak: "before" },
 
       {
         style: "tableExample",
@@ -302,16 +314,6 @@ exports.PDFGen = (Solicitacao, ID, Dados, verified, solicitacao) => {
         table: {
           widths: ["auto"],
           body: contenedores,
-        },
-      },
-
-      { text: "Detalhes", style: "subheader", pageBreak: "before" },
-
-      {
-        style: "tableExample",
-        table: {
-          widths: ["auto", "*"],
-          body: detalhes,
         },
       },
 

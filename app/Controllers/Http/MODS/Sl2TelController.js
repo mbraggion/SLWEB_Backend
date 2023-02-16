@@ -1,5 +1,6 @@
 "use strict";
 const Database = use("Database");
+const moment = require('moment')
 const { seeToken } = require('../../../Services/jwtServices')
 const {
   GenTokenTMT,
@@ -96,7 +97,7 @@ class Sl2TelController {
         ListInstalacoes(tokenTMT.data.access_token),
       ])
 
-      
+
 
       /* encontro na lista de máquina a que me interessa pelo ID e tambem 
       filtro se existe alguma instalacao com data de encerramento 'null'*/
@@ -143,23 +144,50 @@ class Sl2TelController {
   //retornar o endereco do SLAplic ou do TMT onde X máquina se encontra
   async Show({ params, response }) {
     const Ativo = params.ativo
-    const tokenTMT = await GenTokenTMT('0201');
+    // const tokenTMT = await GenTokenTMT('0000');
 
-    const arrow = (end) => `${checkNull(end.Logradouro).trim()} ${checkNull(end.Numero).trim()} ${checkNull(end.Complemento).trim()}, ${checkNull(end.Bairro).trim()}, ${checkNull(end.NomeCidade).trim()} - ${checkNull(end.UF).trim()}, ${checkNull(end.CEP).trim()}`
-    const checkNull = (value) => value === null || typeof value == 'undefined' ? '' : String(value)
+    //busca endereço da máquina no SLAplic
+    const EndSLAplic = await Database.raw(
+      "SELECT P.EquiCod AS Matrícula, P.AnxDesc AS CLIENTE, CONCAT(P.PdvLogradouroPV, ' ', P.PdvNumeroPV)AS ENDERECO, P.PdvBairroPV AS BAIRRO, P.PdvCidadePV AS CIDADE, P.PdvUfPV AS UF, P.PdvCEP AS CEP FROM SLAPLIC.dbo.PontoVenda AS P INNER JOIN SLAPLIC.dbo.Equipamento AS E ON P.EquiCod = E.EquiCod WHERE (E.EquiCod = ?) AND (P.PdvStatus = 'A')",
+      [Ativo]
+    )
 
-    //retorna endereço da máquina no SLAplic
-    const EndSLAplic = await Database.raw("SELECT E.EquiDesc AS Modelo, P.EquiCod AS Ativo, P.IMEI, P.AnxDesc AS Nome, P.PdvLogradouroPV AS Logradouro, P.PdvNumeroPV AS Numero, P.PdvComplementoPV AS Complemento, P.PdvBairroPV AS Bairro, P.PdvCidadePV AS NomeCidade, P.PdvUfPV AS UF, P.PdvCEP AS CEP FROM dbo.PontoVenda AS P INNER JOIN dbo.Equipamento AS E ON P.EquiCod = E.EquiCod WHERE (E.EquiCod = ?) AND (P.PdvStatus = 'A')", [Ativo])
     if (EndSLAplic.length > 0) {
-      response.status(200).send(arrow(EndSLAplic[0]))
+      response
+        .status(200)
+        .send({
+          Ativo: EndSLAplic[0].Matrícula,
+          Cliente: EndSLAplic[0].CLIENTE,
+          Endereço: montarEndPDV(EndSLAplic[0]),
+          Fonte: 'SLWEB',
+          timestamp: moment().subtract(3, 'hours').toDate()
+        })
+
+      return
     } else {
-      const IdMaqTotvs = await FindUltimaInstalacao(tokenTMT.data.access_token, Ativo);
-      const EndTotvs = await FindEnderecoPorInstalacaoCliente(tokenTMT.data.access_token, IdMaqTotvs);
-      if (typeof EndTotvs.data === 'string') {
-        response.status(200).send(EndTotvs.data)
+      const EndTotvs = await Database.raw(
+        "select Matrícula, CLIENTE, ENDERECO, BAIRRO, CIDADE, UF, CEP from SLCafes.SLAPLIC.dbo.MIFIX_API_CLIENTE_ENDER where Matrícula = ?",
+        [Ativo]
+      )
+
+      if (EndTotvs.length > 0) {
+        response
+          .status(200)
+          .send({
+            Ativo: EndTotvs[0].Matrícula,
+            Cliente: EndTotvs[0].CLIENTE,
+            Endereço: montarEndPDV(EndTotvs[0]),
+            Fonte: 'TOTVs',
+            timestamp: moment().subtract(3, 'hours').toDate()
+          })
       } else {
-        response.status(200).send(arrow(EndTotvs.data))
+        response
+        .status(400)
+        .send({
+          message: 'Endereço do ativo não encontrado nas fontes de dados.'
+        })
       }
+
     }
   }
 }
@@ -177,4 +205,16 @@ const returnClientID = (clientes, targetCNPJ) => {
   }
 
   return aux
+}
+
+const montarEndPDV = (end) => {
+  let r = ''
+
+  r = r.concat(end.ENDERECO.trim())
+  r = r.concat(', ', end.BAIRRO.trim())
+  r = r.concat(', ', end.CIDADE.trim())
+  r = r.concat(', ', end.UF.trim())
+  r = r.concat(', ', end.CEP.trim())
+
+  return r
 }
