@@ -39,7 +39,10 @@ class PedidosDeCompra {
         }
       }
 
-      let transportadoras = await Database.raw('select A4_COD, A4_NREDUZ from SLCafes.SDBP12.dbo.SA4010 ')
+      //let transportadoras = await Database.raw('select A4_COD, A4_NREDUZ from SLCafes.SDBP12.dbo.SA4010 ')
+      let transportadoras = await Database.raw('select A4_COD, A4_NREDUZ from ' + Env.get('SLCAFES_SDBP12') + '.dbo.SA4010 ')
+
+      
 
       response.status(200).send({
         Pedidos: pedidosDeCompraEmAberto,

@@ -1,4 +1,5 @@
 "use strict";
+const Env = use("Env");
 const Database = use("Database");
 const { seeToken } = require("../../../Services/jwtServices");
 const moment = require("moment");
@@ -69,8 +70,9 @@ class ApontaConsumoController {
 
         // verifico se os detalhes da leitura estão pelo menos já no DB da Pilão
         let temDetPilao = [];
+        //"select distinct LeituraId from SLCafes.SLAPLIC.dbo.SLTEL_LeituraSelecaoT where LeituraId in (?, ?)",
         temDetPilao = await Database.raw(
-          "select distinct LeituraId from SLCafes.SLAPLIC.dbo.SLTEL_LeituraSelecaoT where LeituraId in (?, ?)",
+          "select distinct LeituraId from " + Env.get('SLCAFES_SLAPLIC') + ".dbo.SLTEL_LeituraSelecaoT where LeituraId in (?, ?)",
           [leituraIdInit, leituraIdEnc]
         );
 

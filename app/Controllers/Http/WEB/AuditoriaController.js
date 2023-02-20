@@ -63,7 +63,9 @@ class AuditoriaController {
 
       if (status === 'disponivel') {
         leiturasNoMes = await Database.raw("select DataLeitura, LeituraId, Matricula, QuantidadeTotal from SLAPLIC.dbo.SLTELLeitura where Matricula = ? and DATEDIFF(D, DataLeitura, GETDATE()) <= 31 order by DataLeitura DESC", [index[0].EquiCod])
-        const t = await Database.raw("SELECT Id FROM SLCafes.SLTelV1Prod.dbo.Telemetria where Matricula = ?", [index[0].EquiCod])
+        //const t = await Database.raw("SELECT Id FROM SLCafes.SLTelV1Prod.dbo.Telemetria where Matricula = ?", [index[0].EquiCod])
+        const t = await Database.raw("SELECT Id FROM " + Env.get('SLCAFES_SLTELV1PROD') + ".dbo.Telemetria where Matricula = ?", [index[0].EquiCod])
+        
         telId = t[0].Id
       }
 
