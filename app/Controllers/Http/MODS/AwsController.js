@@ -194,7 +194,9 @@ class AwsController {
   async GatoLeituras({ response }) {
     try {
       // clonar a tabela Equipamentos da AWS pra Pilão
-      await Database.connection("mssql").raw("insert into SLCafes.SLAPLIC.dbo.Equipamento select * from SLAPLIC.dbo.Equipamento where EquiCod not in (select EquiCod from SLCafes.SLAPLIC.dbo.Equipamento)")
+      //await Database.connection("mssql").raw("insert into SLCafes.SLAPLIC.dbo.Equipamento select * from SLAPLIC.dbo.Equipamento where EquiCod not in (select EquiCod from SLCafes.SLAPLIC.dbo.Equipamento)")
+      await Database.connection("mssql").raw("insert into " + Env.get('SLCAFES_SLAPLIC') + ".dbo.Equipamento select * from SLAPLIC.dbo.Equipamento where EquiCod not in (select EquiCod from " + Env.get('SLCAFES_SLAPLIC') + ".dbo.Equipamento)")
+      
 
       // executar proc no 248
       await Database.connection("old_mssql").raw("execute dbo.sp_SLTELLeituraApp")
