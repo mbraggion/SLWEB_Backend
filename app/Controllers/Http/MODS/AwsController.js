@@ -10,6 +10,7 @@ const QRCode = require('qrcode');
 const { joinImages } = require('join-images')
 const PdfPrinter = require("pdfmake");
 const { PDFGen } = require('../../../../resources/pdfModels/loteQRCode')
+const Env = use("Env");
 
 var fonts = {
   Roboto: {
@@ -159,6 +160,7 @@ class AwsController {
 
       if (contInsert > 0) {
         // await Database.connection("mssql").raw("INSERT INTO SLCafes.SLAPLIC.dbo.PedidosCompraCab ( [GrpVen], [PedidoId], [STATUS], [Filial], [CpgId], [DataCriacao], [DataIntegracao], [NroNF], [SerieNF], [DtEmissNF], [ChaveNF], [MsgNF], [C5NUM] ) SELECT * from dbo.PedidosCompraCab where dbo.PedidosCompraCab.PedidoId not in ( select PedidoId from SLCafes.SLAPLIC.dbo.PedidosCompraCab )")
+        // await Database.connection("mssql").raw("INSERT INTO " + Env.get('SLCAFES_SLAPLIC') + ".dbo.PedidosCompraCab ( [GrpVen], [PedidoId], [STATUS], [Filial], [CpgId], [DataCriacao], [DataIntegracao], [NroNF], [SerieNF], [DtEmissNF], [ChaveNF], [MsgNF], [C5NUM] ) SELECT * from dbo.PedidosCompraCab where dbo.PedidosCompraCab.PedidoId not in ( select PedidoId from " + Env.get('SLCAFES_SLAPLIC') + ".dbo.PedidosCompraCab )")
 
         var ls = spawn(Helpers.publicPath('Carga_Pedidos_Compra_Para_TOTVs.bat'))
 
@@ -192,13 +194,17 @@ class AwsController {
   async GatoLeituras({ response }) {
     try {
       // clonar a tabela Equipamentos da AWS pra Pilão
-      await Database.connection("mssql").raw("insert into SLCafes.SLAPLIC.dbo.Equipamento select * from SLAPLIC.dbo.Equipamento where EquiCod not in (select EquiCod from SLCafes.SLAPLIC.dbo.Equipamento)")
+      //await Database.connection("mssql").raw("insert into SLCafes.SLAPLIC.dbo.Equipamento select * from SLAPLIC.dbo.Equipamento where EquiCod not in (select EquiCod from SLCafes.SLAPLIC.dbo.Equipamento)")
+      await Database.connection("mssql").raw("insert into " + Env.get('SLCAFES_SLAPLIC') + ".dbo.Equipamento select * from SLAPLIC.dbo.Equipamento where EquiCod not in (select EquiCod from " + Env.get('SLCAFES_SLAPLIC') + ".dbo.Equipamento)")
+      
 
       // executar proc no 248
       await Database.connection("old_mssql").raw("execute dbo.sp_SLTELLeituraApp")
 
       // copiar leituras pra aws
-      await Database.connection("mssql").raw("insert into SLAPLIC.dbo.SLTELLeitura select * from SLCafes.SLAPLIC.dbo.SLTELLeitura where LeituraId not in ( select LeituraId from SLAPLIC.dbo.SLTELLeitura )")
+      //await Database.connection("mssql").raw("insert into SLAPLIC.dbo.SLTELLeitura select * from SLCafes.SLAPLIC.dbo.SLTELLeitura where LeituraId not in ( select LeituraId from SLAPLIC.dbo.SLTELLeitura )")
+      await Database.connection("mssql").raw("insert into SLAPLIC.dbo.SLTELLeitura select * from " + Env.get('SLCAFES_SLAPLIC') + ".dbo.SLTELLeitura where LeituraId not in ( select LeituraId from SLAPLIC.dbo.SLTELLeitura )")
+      
 
       response.status(200).send()
     } catch (err) {
@@ -214,7 +220,8 @@ class AwsController {
     try {
       const arrayWithEquipNumbers = await Database
         .select('N1_CHAPA')
-        .from('SLCafes.SLAPLIC.dbo.SN1SZ2_QRCode')
+        //.from('SLCafes.SLAPLIC.dbo.SN1SZ2_QRCode')
+        .from(Env.get('SLCAFES_SLAPLIC') + '.dbo.SN1SZ2_QRCode')
         .map(item => item.N1_CHAPA)
 
       let savedFiles = [[]]
