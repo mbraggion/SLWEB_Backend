@@ -150,31 +150,28 @@ class EquipRequestController {
 
     try {
       const verified = seeToken(token);
-      console.log("chegou: " + params.txt);
       const txtLen = params.txt.length;
       const txt = String(params.txt).substring(1, txtLen);
 
       let endereços = [];
-      console.log("grpven: " + verified.grpven + ' ' + txt);
 
       if (verified.grpven == '990201') {
-        //busca os endereços de todos os clientes para entrega (Filial Pilão 0201 - Para Controle de Peças)
-        endereços = await Database.raw(`
-          SELECT  TOP 15
-                  TRIM(A1_NREDUZ) as Nome_Fantasia,
-                  CONCAT( LEFT([A1_CGC], 2) , '.',  SUBSTRING([A1_CGC], 3, 3), '.', SUBSTRING([A1_CGC], 6, 3), '/', SUBSTRING([A1_CGC], 9, 4), '-', RIGHT([A1_CGC],2) ) as CNPJss,
-                  A1_END as Logradouro,
-                  '' as Número,
-                  '' as Complemento,
-                  A1_BAIRRO as Bairro,
-                  A1_CEP as CEP,
-                  A1_MUN as Município,
-                  A1_EST as UF
-          FROM    dbo.SA10201 as Cliente
-          WHERE   UPPER(A1_NREDUZ) LIKE UPPER('%${txt}%')
-          ORDER BY
-                  A1_NREDUZ;
-        `);
+        //busca os endereços de todos os clientes para entrega (Filial Pilão 0201 - Para Controle de Peças - Versão com View Cliente_SA10201)
+        endereços = await Database.select(
+          "Nome_Fantasia",
+          "CNPJss",
+          "Logradouro",
+          "Número",
+          "Complemento",
+          "Bairro",
+          "CEP",
+          "Município",
+          "UF"
+        )
+          .from("dbo.Cliente_SA10201")
+          .where("Nome_Fantasia", "LIKE", `%${txt}%`.toUpperCase())
+          .limit(15)
+          .orderBy("Nome_Fantasia");
       } 
       else {
       
@@ -199,7 +196,7 @@ class EquipRequestController {
           .limit(15)
           .orderBy("Nome_Fantasia");
       }
-      console.log("conta: " + endereços.length);
+
       response.status(200).send({
         endereços,
       });      
@@ -418,9 +415,6 @@ class EquipRequestController {
         OSObs: Solicitacao.Observacao,
       }).into("dbo.OSCtrlSpec");
 
-      console.log('PDFGen');
-      console.dir(Solicitacao);
-
       const PDFModel = PDFGen(Solicitacao, ID, Dados, verified);
 
       var pdfDoc = printer.createPdfKitDocument(PDFModel);
@@ -487,7 +481,13 @@ class EquipRequestController {
     try {
       const verified = seeToken(token);
 
-      cab = await Database.raw(CabeçalhoDaOS, [OSID])
+      if (verified.grpven == '990201') {
+          cab = await Database.raw(CabeçalhoDaOSClienteSA10201, [OSID])
+      }
+      else{
+          cab = await Database.raw(CabeçalhoDaOS, [OSID])
+      }
+      
       contenedores = await Database.raw(ContenedoresDaOS, [OSID])
       det = await Database.raw(DetalhesDaOS, [OSID])
       Dados = await Database.select("GrupoVenda", "M0_CGC", 'Email', 'M0_CODFIL')
@@ -584,6 +584,8 @@ class EquipRequestController {
 module.exports = EquipRequestController;
 
 const CabeçalhoDaOS = "select OC.GrpVen, OS.MaqId as MaquinaId, OSC.MaqModelo as Maquina, OC.OSCDtSolicita as DataSolicitada, OS.SisPag as Pagamento, OS.ValidadorVal as Validador, OS.ValidadorCond as TipoValidador, OS.InibCopos as InibirCopos, OS.MaqCorp as Corporativa, OS.Gabinete as Gabinete, OS.THidrico as Abastecimento, OS.TComunic as Chip, OS.Antena as AntExt, C.Nome_Fantasia as Cliente_Destino, OC.OSCnpjDest as CNPJ_Destino, OC.OSCDestino as Endereço_Entrega, OC.OSCDtPretendida as Data_Entrega_Desejada, OC.OSCcontato as Contato, OC.OSCEmail as Email_Acompanhamento, OC.OSCTelCont as Telefone_Contato, OS.OSObs as Observacao, OC.OSCPDF, OC.EquipCod, OC.SLRaspyNum, OC.TelemetriaNum from dbo.OSCtrl as OC inner join dbo.OSCtrlSpec as OS on OC.OSCId = OS.OSCId left join dbo.OSConfigMaq as OSC on OS.MaqId = OSC.MaqModId left join dbo.Cliente as C on C.CNPJss = OC.OSCnpjDest and C.GrpVen = OC.GrpVen where OC.OSCId = ?"
+
+const CabeçalhoDaOSClienteSA10201 = "select OC.GrpVen, OS.MaqId as MaquinaId, OSC.MaqModelo as Maquina, OC.OSCDtSolicita as DataSolicitada, OS.SisPag as Pagamento, OS.ValidadorVal as Validador, OS.ValidadorCond as TipoValidador, OS.InibCopos as InibirCopos, OS.MaqCorp as Corporativa, OS.Gabinete as Gabinete, OS.THidrico as Abastecimento, OS.TComunic as Chip, OS.Antena as AntExt, C.Nome_Fantasia as Cliente_Destino, OC.OSCnpjDest as CNPJ_Destino, OC.OSCDestino as Endereço_Entrega, OC.OSCDtPretendida as Data_Entrega_Desejada, OC.OSCcontato as Contato, OC.OSCEmail as Email_Acompanhamento, OC.OSCTelCont as Telefone_Contato, OS.OSObs as Observacao, OC.OSCPDF, OC.EquipCod, OC.SLRaspyNum, OC.TelemetriaNum from dbo.OSCtrl as OC inner join dbo.OSCtrlSpec as OS on OC.OSCId = OS.OSCId left join dbo.OSConfigMaq as OSC on OS.MaqId = OSC.MaqModId left join dbo.Cliente_SA10201 as C on C.CNPJss = OC.OSCnpjDest and C.GrpVen = OC.GrpVen where OC.OSCId = ?"
 
 const ContenedoresDaOS = "select distinct IIF(OD.TProduto = 'Pronto', OB.ContPronto, OB.ContMist) as Contenedor from dbo.OSCtrlDet as OD inner join dbo.OSBebidas as OB on OD.BebidaId = OB.Cod where OD.OSCId = ?"
 
