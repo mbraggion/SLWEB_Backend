@@ -30,26 +30,7 @@ class EquipRequestController {
 
     try {
       const verified = seeToken(token);
-
-      //busca os endereços dos clientes para entrega
-      const endereços = await Database.select(
-        "Nome_Fantasia",
-        "CNPJss",
-        "Logradouro",
-        "Número",
-        "Complemento",
-        "Bairro",
-        "CEP",
-        "Município",
-        "UF"
-      )
-        .from("dbo.Cliente")
-        .where({
-          GrpVen: verified.grpven,
-          ClienteStatus: 'A'
-        })
-        .orderBy("Nome_Fantasia");
-
+      
       //prazo minimo para recebimento das máquinas
       const MinDDL = await Database.select("ParamVlr")
         .from("dbo.Parametros")
@@ -146,7 +127,7 @@ class EquipRequestController {
       }
 
       response.status(200).send({
-        endereços,
+        //endereços,
         MaquinasDisponiveis,
         BebidasNovo,
         MinDDL: MinDDL[0].ParamVlr,
@@ -160,6 +141,77 @@ class EquipRequestController {
         payload: request.body,
         err: err.message,
         handler: 'EquipRequestController.See',
+      })
+    }
+  }
+
+  async GetClientAddress({ request, response, params }) {
+    const token = request.header("authorization");
+
+    try {
+      const verified = seeToken(token);
+      console.log("chegou: " + params.txt);
+      const txtLen = params.txt.length;
+      const txt = String(params.txt).substring(1, txtLen);
+
+      let endereços = [];
+      console.log("grpven: " + verified.grpven + ' ' + txt);
+
+      if (verified.grpven == '990201') {
+        //busca os endereços de todos os clientes para entrega (Filial Pilão 0201 - Para Controle de Peças)
+        endereços = await Database.raw(`
+          SELECT  TOP 15
+                  TRIM(A1_NREDUZ) as Nome_Fantasia,
+                  CONCAT( LEFT([A1_CGC], 2) , '.',  SUBSTRING([A1_CGC], 3, 3), '.', SUBSTRING([A1_CGC], 6, 3), '/', SUBSTRING([A1_CGC], 9, 4), '-', RIGHT([A1_CGC],2) ) as CNPJss,
+                  A1_END as Logradouro,
+                  '' as Número,
+                  '' as Complemento,
+                  A1_BAIRRO as Bairro,
+                  A1_CEP as CEP,
+                  A1_MUN as Município,
+                  A1_EST as UF
+          FROM    dbo.SA10201 as Cliente
+          WHERE   UPPER(A1_NREDUZ) LIKE UPPER('%${txt}%')
+          ORDER BY
+                  A1_NREDUZ;
+        `);
+      } 
+      else {
+      
+        //busca os endereços dos clientes para entrega
+        endereços = await Database.select(
+          "Nome_Fantasia",
+          "CNPJss",
+          "Logradouro",
+          "Número",
+          "Complemento",
+          "Bairro",
+          "CEP",
+          "Município",
+          "UF"
+        )
+          .from("dbo.Cliente")
+          .where({
+            GrpVen: verified.grpven,
+            ClienteStatus: 'A'
+          })
+          .andWhere("UPPER(Nome_Fantasia)", "LIKE", `%${txt}%`.toUpperCase())
+          .limit(15)
+          .orderBy("Nome_Fantasia");
+      }
+      console.log("conta: " + endereços.length);
+      response.status(200).send({
+        endereços,
+      });      
+
+    } catch (err) {
+      response.status(400).send()
+      logger.error({
+        token: token,
+        params: null,
+        payload: request.body,
+        err: err.message,
+        handler: 'EquipRequestController.GetClientAdress',
       })
     }
   }
@@ -365,6 +417,9 @@ class EquipRequestController {
         MaqCorp: Solicitacao.Corporativa,
         OSObs: Solicitacao.Observacao,
       }).into("dbo.OSCtrlSpec");
+
+      console.log('PDFGen');
+      console.dir(Solicitacao);
 
       const PDFModel = PDFGen(Solicitacao, ID, Dados, verified);
 
