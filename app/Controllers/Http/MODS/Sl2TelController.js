@@ -1,4 +1,5 @@
 "use strict";
+const Env = use("Env");
 const Database = use("Database");
 const moment = require('moment')
 const { seeToken } = require('../../../Services/jwtServices')
@@ -166,7 +167,8 @@ class Sl2TelController {
       return
     } else {
       const EndTotvs = await Database.raw(
-        "select Matrícula, CLIENTE, ENDERECO, BAIRRO, CIDADE, UF, CEP from SLCafes.SLAPLIC.dbo.MIFIX_API_CLIENTE_ENDER where Matrícula = ?",
+        //"select Matrícula, CLIENTE, ENDERECO, BAIRRO, CIDADE, UF, CEP from SLCafes.SLAPLIC.dbo.MIFIX_API_CLIENTE_ENDER where Matrícula = ?",
+        "select Matrícula, CLIENTE, ENDERECO, BAIRRO, CIDADE, UF, CEP from " + Env.get('SLCAFES_SLAPLIC') + ".dbo.MIFIX_API_CLIENTE_ENDER where Matrícula = ?",
         [Ativo]
       )
 
