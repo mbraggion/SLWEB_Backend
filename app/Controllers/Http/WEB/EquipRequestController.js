@@ -73,12 +73,24 @@ class EquipRequestController {
         });
       });
 
-      //busca tipos de máquina disponiveis para requisição
-      const MaquinasDisponiveis = await Database.select("*")
+      let MaquinasDisponiveis;
+      if (verified.grpven == '990201' ) {
+        //busca tipos de máquina disponiveis para requisição
+        MaquinasDisponiveis = await Database.select("*")
         .from("dbo.OSConfigMaq")
         .where({
           Disponivel: 1,
         });
+      }
+      else{
+        //busca tipos de máquina disponiveis para requisição
+        MaquinasDisponiveis = await Database.select("*")
+        .from("dbo.OSConfigMaq")
+        .where({
+          Disponivel: 1,
+          Dominio: 1,
+        });
+      }
 
       //busca bebidas que o cliente pode incluir inicialmente na máquina
       const Bebidas = await Database.select("*")
